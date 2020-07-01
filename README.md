@@ -1,17 +1,25 @@
 
 # Neural Process Families
 
-This repository implements a pytorch version of Neural Process families including:
+This repository implements a pytorch version of Neural Process families:
 - [Conditional Neural Processes](https://arxiv.org/abs/1807.01613) (CNP)
+<p align="center">
+<img src="saved_fig/CNP_EQ.gif" width="200"> <img src="saved_fig/CNP_period.gif" width="200">
+</p>
 
 - [Neural Processes](https://arxiv.org/abs/1807.01622) (NP)
+<p align="center">
+<img src="saved_fig/NP_EQ.gif" width="200"> <img src="saved_fig/NP_period.gif" width="200">
+</p>
 
 - [Attentive Neural Processes](https://arxiv.org/abs/1901.05761) (ANP)
+<p align="center">
+<img src="saved_fig/ANP_EQ.gif" width="200"> <img src="saved_fig/ANP_period.gif" width="200">
+</p>
 
 - [Convolutional Conditional Neural Processes](https://arxiv.org/abs/1910.13556) (ConvCNP)
-
 <p align="center">
-<img src="demo_images/NP-PROV-MU.jpg" width="200"> <img src="demo_images/NP-PROV-SIGMA.jpg" width="200">
+<img src="saved_fig/ConvCNP_EQ.gif" width="200"> <img src="saved_fig/ConvCNP_period.gif" width="200">
 </p>
 
 ## Requirements
