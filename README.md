@@ -130,4 +130,4 @@ https://github.com/cambridge-mlg/convcnp
 
 * Understanding Gaussian Process with visualizations: https://distill.pub/2019/visual-exploration-gaussian-processes/ 
 
-Neural Process Papers I found useful:
+* Understanding Neural Process with visualizations:   https://kasparmartens.rbind.io/post/np/

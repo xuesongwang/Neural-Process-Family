@@ -58,7 +58,7 @@ if __name__ == '__main__':
     # for _ in range(10):
     #     test_loss = testing(dataset, np, TESTING_ITERATIONS)
     #     total_loss.append(test_loss)
-    # print("for 10 runs, mean: %.4f, var:%.4f" % (numpy.mean(total_loss), numpy.var(total_loss)))
+    # print("for 10 runs, mean: %.4f, std:%.4f" % (numpy.mean(total_loss), numpy.std(total_loss)))
 
     test_loss = testing(dataset, np, TESTING_ITERATIONS)
     print ("loglikelihood on 1024 samples: %.4f"%(test_loss))
