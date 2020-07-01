@@ -70,7 +70,7 @@ if __name__ == '__main__':
         writer.add_scalars("Log-likelihood", {"train": -loss.item()}, epoch)
         if (epoch % 100 == 0 and epoch<VAL_AFTER) or  epoch % VAL_AFTER == 0:
             val_loss = validation(dataset, convcnp)
-            save_plot(epoch, plot_data, convcnp)  # save training process, optional
+            # save_plot(epoch, plot_data, convcnp)  # save training process, optional
             writer.add_scalars("Log-likelihood", {"val": val_loss}, epoch)
             if val_loss > BEST_LOSS:
                 BEST_LOSS = val_loss

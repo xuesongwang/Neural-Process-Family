@@ -74,7 +74,7 @@ if __name__ == '__main__':
                                               "train/kl": kl_loss.item()}, epoch)
         if (epoch % 100 == 0 and epoch<VAL_AFTER) or  epoch % VAL_AFTER == 0:
             val_loss = validation(dataset, np)
-            save_plot(epoch, plot_data, np)
+            # save_plot(epoch, plot_data, np)
             writer.add_scalars("Log-likelihood", {"val": val_loss}, epoch)
             if val_loss > BEST_LOSS:
                 BEST_LOSS = val_loss

@@ -65,9 +65,11 @@ The following arguments can be modified in the first few lines of the __main__ f
       
    - `period`: samples from a GP with a periodic kernel: <br />  <img src="saved_fig/periodic-kernel-eq.png" width="200">
  
-In default, a tensorboard folder with timestamp will be created in `runs` to save training and validation losses. Every 1,000 epochs, 
-the model will be validated using new 64 tasks and the best model will be stored in `saved_model`.  We also save the plots of model predictions
-on a fixed sample data in order to record the training progress as welll as baseline comparisons (as shown in the gif). 
+In default, a tensorboard folder  `runs` will be created in order to save training and validation losses. 
+
+Every 1,000 epochs, the model will be validated using new 64 tasks and the best model will be stored in `saved_model`.  
+
+We also save the plots of model predictions on a fixed sample data in order to record the training progress as welll as baseline comparisons (as shown in the gif). 
      
 #### 2D datasets      
 To train the models for on-the-grid datasets, run this command:
