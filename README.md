@@ -10,18 +10,8 @@ This repository implements a pytorch version of Neural Process families:
 
 - [Convolutional Conditional Neural Processes](https://arxiv.org/abs/1910.13556) (ConvCNP)
 
-The fitting process of each model is presented as below. An RBF-kernel and a periodic kerenl are adopted.
+The fitting processes of each model are presented as below. An EQ-kernel and a periodic kerenl are used.
  
- 
-RBF kernel:
- 
- <img src="saved_fig/rbf-kernel-eq.png" width="170">
-
-Periodic kernel:
- 
- <img src="saved_fig/periodic-kernel-eq.png" width="200">
-
-
 CNP:
 <p align="center">
 <img src="saved_fig/CNP_EQ.gif" width="300"> <img src="saved_fig/CNP_period.gif" width="300">
@@ -48,8 +38,7 @@ ConvCNP:
 * pandas 0.25.1
 * tensorboard 1.14+ (optional if you do not want to visualize the training process) 
     
-
-To install the requirements!
+To install the requirements, run:
 
 ```bash
 pip install -r requirements.txt
@@ -58,24 +47,29 @@ pip install -r requirements.txt
 
 ## Training
 
-#### Off-the-grid datasets
-To train the model(s) for off-the-grid datasets, run this command:
+#### 1D datasets
+To train the model(s) for 1D Gaussian Process sampled datasets, run *_train.py files. For example:
 
 ```train
-python train_1d.py --name EQ --epochs 200 --learning_rate 3e-4 --weight_decay 1e-5
+python CNP_train.py
 ```
+The following arguments can be modified in the first few lines of the __main__ functions 
 
-The first argument, `name`(`default = EQ`), specifies the data that the model will be trained
-on, and should be one of the following:
+- `TRAINING_ITERATIONS`: (default = 2e5), total number of generated batches during training 
+- `MAX_CONTEXT_POINT`:  (default = 50), maximum number of samples for both context and target data 
+- `VAL_AFTER`: (default = 1e3), validation frequency 
+- `MODELNAME`: useful in NP_or_ANP_train.py, could be either ANP or NP 
+- `kernel`: kernel functions to generate data
+   - `EQ`: samples from a GP with an exponentiated quadratic (EQ) kernel;
+      <img src="saved_fig/rbf-kernel-eq.png" width="140">
+      
+   - `period`: samples from a GP with a periodic kernel; <img src="saved_fig/periodic-kernel-eq.png" width="200">
  
-* `EQ`: samples from a GP with an exponentiated quadratic (EQ) kernel;
-* `matern`: samples from a GP with a Matern-5/2 kernel;
-* `period`: samples from a GP with a weakly-periodic kernel
-* `smart_meter`: This dataset is referred from: https://github.com/3springs/attentive-neural-processes/tree/RANPfSD/data 
- To train on smart_meter, you need to change the argument `indir` in the function of `get_smartmeter_df` in `data/smart_meter.py` 
- to your own data path. 
+In default, a tensorboard folder with timestamp will be created in `runs` to save training and validation losses. Every 1,000 epochs, 
+the model will be validated using new 64 tasks and the best model will be stored in `saved_model`.  We also save the plots of model predictions
+on a fixed sample data in order to record the training progress as welll as baseline comparisons (as shown in the gif). 
      
-#### On-the-grid datasets      
+#### 2D datasets      
 To train the models for on-the-grid datasets, run this command:
 ```train
 python train_2d.py --dataset mnist --batch-size 16 --learning-rate 5e-4 --epochs 100
