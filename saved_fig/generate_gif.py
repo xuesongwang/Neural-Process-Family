@@ -13,11 +13,11 @@ def build_gif(modelname, kernel):
     subprocess.call(['convert',
                      '-delay', '20',
                      '-loop', '0',
-                     modelname +'/'+kernel+'/*.png', +modelname+'_'+ kernel+'.gif'])
+                     modelname +'/'+kernel+'/*.png', modelname+'_'+ kernel+'.gif'])
     print("finished GIF!")
 
 if __name__ == '__main__':
-    kernel = 'period'
+    kernel = 'EQ'
     MODELNAME = 'ConvCNP'
     # rename_file(kernel)
     build_gif(MODELNAME, kernel)

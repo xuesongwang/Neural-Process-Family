@@ -3,21 +3,28 @@
 
 This repository implements a pytorch version of Neural Process families:
 - [Conditional Neural Processes](https://arxiv.org/abs/1807.01613) (CNP)
+
+- [Neural Processes](https://arxiv.org/abs/1807.01622) (NP)
+
+- [Attentive Neural Processes](https://arxiv.org/abs/1901.05761) (ANP)
+
+- [Convolutional Conditional Neural Processes](https://arxiv.org/abs/1910.13556) (ConvCNP)
+
+The fitting process of each model is presented as below:
+ 
+CNP:
 <p align="center">
 <img src="saved_fig/CNP_EQ.gif" width="200"> <img src="saved_fig/CNP_period.gif" width="200">
 </p>
-
-- [Neural Processes](https://arxiv.org/abs/1807.01622) (NP)
+NP:
 <p align="center">
 <img src="saved_fig/NP_EQ.gif" width="200"> <img src="saved_fig/NP_period.gif" width="200">
 </p>
-
-- [Attentive Neural Processes](https://arxiv.org/abs/1901.05761) (ANP)
+ANP:
 <p align="center">
 <img src="saved_fig/ANP_EQ.gif" width="200"> <img src="saved_fig/ANP_period.gif" width="200">
 </p>
-
-- [Convolutional Conditional Neural Processes](https://arxiv.org/abs/1910.13556) (ConvCNP)
+ConvCNP:
 <p align="center">
 <img src="saved_fig/ConvCNP_EQ.gif" width="200"> <img src="saved_fig/ConvCNP_period.gif" width="200">
 </p>
