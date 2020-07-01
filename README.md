@@ -69,10 +69,10 @@ In default, a tensorboard folder  `runs` will be created in order to save traini
 
 Every 1,000 epochs, the model will be validated using new 64 tasks and the best model will be stored in `saved_model`.  
 
-We also save the plots of model predictions on a fixed sample data in order to record the training progress as welll as baseline comparisons (as shown in the gif). 
+We also build a function to save the plots of model predictions on a fixed sample data and record the training progress as welll as baseline comparisons (as shown in the gif). 
      
 #### 2D datasets      
-To train the models for on-the-grid datasets, run this command:
+To train the models for 2D datasets, run this command:
 ```train
 python train_2d.py --dataset mnist --batch-size 16 --learning-rate 5e-4 --epochs 100
 ```           
@@ -93,11 +93,11 @@ To evaluate models on 1D datasets, run *_test.py files. For example:
 python CNP_test.py
 ```
 The arguments are the same as in *_train.py. A model `kernel` + `MODELNAME.pt`
-will be loaded from the folder `saved_model`. Each model will be tested on new 1-24 tasks.
+will be loaded from the folder `saved_model`. Each model will be tested on new 1024 tasks.
 
 
 #### 2D datasets
-To evaluate my model on On-the-grid datasets, run:
+To evaluate models on 2D datasets, run:
 ```eval
 python eval_2d.py --dataset mnist --batch-size 16
 ```
@@ -106,20 +106,16 @@ will be loaded from the folder `saved_model`. The commented out function `plot_s
 
 ## Results
 
-The models achieve the following log-likelihood on the 1D and 2D datasets. Each model is tested for 10 runs and the results are 
- displayed in mean (variance). 
+We measure the log-likelihood on 1D and 2D datasets. Each model is tested for 10 runs and the results are 
+ displayed in mean (std). 
 
-| Model name          | EQ              | Periodic       |
-| ------------------- |---------------- | -------------- |
-| NP                  | 2.20 (0.02)     |    0.90 (0.03) |
-| CNP                 | 2.20 (0.02)     |    0.90 (0.03) |
-| ANP                 | 2.20 (0.02)     |    0.90 (0.03) |
-| ConvCNP             | 2.20 (0.02)     |    0.90 (0.03) |
+| Model name          | EQ              | Periodic       | MNIST          | SVHN           | celebA         |
+| ------------------- |---------------- | -------------- |--------------  |--------------  |--------------  |
+| NP                  | 1.11 (1e-2)     |    0.18 (1e-2) |
+| CNP                 | 1.30 (2e-2)     |    0.47 (0)    | 
+| ANP                 | 2.00 (2e-2)     |    1.03 (1e-2) |
+| ConvCNP             | 2.53 (3e-2)     |    1.43 (2e-2)  |
 
-
-| Model name         | MNIST           | SVHN           |  celebA       | miniImageNet   |
-| ------------------ |---------------- | -------------- |-------------- | -------------- |
-| NP-PROV            | 2.66 (3e-2)     |    8.24 (5e-2) |  5.11 (1e-2)  | 4.39 (2e-1)    |
 
 ## References
 * Official implementations (tensorflow) of (A)NP and CNP:

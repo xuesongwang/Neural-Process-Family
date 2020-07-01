@@ -4,6 +4,7 @@ from model.utils import compute_loss, to_numpy
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import numpy as np
 
 def testing(data_test, model, test_batch = 64):
     total_ll = 0
@@ -42,7 +43,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     TESTING_ITERATIONS = int(1024)
     MAX_CONTEXT_POINT = 50
-    kernel = 'EQ'  # EQ or period
+    kernel = 'period'  # EQ or period
 
     # load data set
     dataset = GPCurvesReader(kernel=kernel, batch_size=64, max_num_context= MAX_CONTEXT_POINT, device=device)
@@ -50,9 +51,13 @@ if __name__ == '__main__':
     cnp = CNP(input_dim=1, latent_dim = 128, output_dim=1).to(device)
     cnp.load_state_dict(torch.load('saved_model/'+kernel+'_CNP.pt'))
     print("successfully load CNP model!")
-
+    total_loss = []
+    # for _ in range(10):
+    #     test_loss = testing(dataset, cnp, TESTING_ITERATIONS)
+    #     total_loss.append(test_loss)
+    # print("for 10 runs, mean: %.4f, var:%.4f" %(np.mean(total_loss), np.var(total_loss)))
     test_loss = testing(dataset, cnp, TESTING_ITERATIONS)
-    print ("CNP loglikelihood on 1024 samples: %.4f"%(test_loss))
+    # print ("CNP loglikelihood on 1024 samples: %.4f"%(test_loss))
 
     # fig = plot_sample(dataset, cnp)
     # print("save plots!")

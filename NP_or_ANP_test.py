@@ -4,6 +4,7 @@ from model.utils import compute_loss, to_numpy
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import numpy
 
 def testing(data_test, model, test_batch = 64):
     total_ll = 0
@@ -50,8 +51,14 @@ if __name__ == '__main__':
 
     # load model parameters
     np = NP(input_dim=1, latent_dim = 128, output_dim=1, use_attention= MODELNAME=='ANP').to(device)
-    np.load_state_dict(torch.load('saved_model/EQ_' + MODELNAME+'.pt'))
+    np.load_state_dict(torch.load('saved_model/'+kernel+'_' + MODELNAME+'.pt'))
     print("successfully load %s model!" %MODELNAME)
+
+    # total_loss = []
+    # for _ in range(10):
+    #     test_loss = testing(dataset, np, TESTING_ITERATIONS)
+    #     total_loss.append(test_loss)
+    # print("for 10 runs, mean: %.4f, var:%.4f" % (numpy.mean(total_loss), numpy.var(total_loss)))
 
     test_loss = testing(dataset, np, TESTING_ITERATIONS)
     print ("loglikelihood on 1024 samples: %.4f"%(test_loss))

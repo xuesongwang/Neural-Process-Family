@@ -4,6 +4,7 @@ from model.utils import compute_loss, to_numpy
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import numpy as np
 
 def testing(data_test, model, test_batch = 64):
     total_ll = 0
@@ -38,17 +39,23 @@ def plot_sample(dataset, model):
 
 if __name__ == '__main__':
     # define hyper parameters
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:7' if torch.cuda.is_available() else 'cpu')
     TESTING_ITERATIONS = int(1024)
     MAX_CONTEXT_POINT = 50
     MODELNAME = 'ConvCNP'
-    kernel = 'EQ'  # EQ or period
+    kernel = 'period'  # EQ or period
     # load data set
     dataset = GPCurvesReader(kernel=kernel, batch_size=64, max_num_context= MAX_CONTEXT_POINT, device=device)
     convcnp = ConvCNP(rho=UNet(), points_per_unit=64, device = device).to(device)
-    convcnp.load_state_dict(torch.load('saved_model/EQ_' + MODELNAME + '.pt'))
+    convcnp.load_state_dict(torch.load('saved_model/'+kernel+'_' + MODELNAME + '.pt'))
     print("successfully load %s model!" % MODELNAME)
 
+    # total_loss = []
+    # for _ in range(1):
+    #     test_loss = testing(dataset, convcnp, TESTING_ITERATIONS)
+    #     total_loss.append(test_loss)
+    # print("for 10 runs, mean: %.4f, var:%.4f" % (np.mean(total_loss), np.var(total_loss)))
+    #
     test_loss = testing(dataset, convcnp, TESTING_ITERATIONS)
     print ("loglikelihood on 1024 samples: %.4f"%(test_loss))
 
