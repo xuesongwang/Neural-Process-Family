@@ -1,5 +1,5 @@
 from GPdata_sampler import GPCurvesReader
-from model.convCNP import ConvCNP, UNet, SimpleConv
+from model.NP import NeuralProcess as NP
 from model.utils import compute_loss, to_numpy
 import torch
 from tqdm import tqdm
@@ -11,10 +11,11 @@ def testing(data_test, model, test_batch = 64):
     for i in tqdm(range(test_batch)):
         data = data_test.generate_curves(include_context=False)
         (x_context, y_context), x_target = data.query
-        mean, var = model(x_context.to(device), y_context.to(device), x_target.to(device))
+        (mean, var), _, _ = model(x_context.to(device), y_context.to(device), x_target.to(device))
         loss = compute_loss(mean, var, data.y_target.to(device))
         total_ll += -loss.item()
-    return total_ll / (i+1)
+    return total_ll/(i+1)
+
 
 def plot_sample(dataset, model):
     ax, fig = plt.subplots()
@@ -22,7 +23,7 @@ def plot_sample(dataset, model):
     data = dataset.generate_curves(include_context=False)
     (x_context, y_context), x_target = data.query
     x_grid = torch.arange(-2, 2, 0.01)[None, :, None].repeat([x_context.shape[0], 1, 1]).to(device)
-    mean, var = model(x_context.to(device), y_context.to(device), x_grid.to(device))
+    (mean, var), _, _ = model(x_context.to(device), y_context.to(device), x_grid.to(device))
     # plot scatter:
     plt.scatter(to_numpy(x_context[0]), to_numpy(y_context[0]), label = 'context points', c = 'red', s = 15)
     # plot sampled function:
@@ -38,22 +39,28 @@ def plot_sample(dataset, model):
 
 if __name__ == '__main__':
     # define hyper parameters
-    device = torch.device("cuda:6")
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     TESTING_ITERATIONS = int(1024)
     MAX_CONTEXT_POINT = 50
-    MODELNAME = 'ConvCNP'
+    MODELNAME = 'ANP' # 'NP' or 'ANP'
     kernel = 'EQ'  # EQ or period
+    # set up tensorboard
     # load data set
     dataset = GPCurvesReader(kernel=kernel, batch_size=64, max_num_context= MAX_CONTEXT_POINT, device=device)
-    convcnp = ConvCNP(rho=UNet(), points_per_unit=64, device = device).to(device)
-    convcnp.load_state_dict(torch.load('saved_model/EQ_' + MODELNAME + '.pt'))
-    print("successfully load %s model!" % MODELNAME)
 
-    test_loss = testing(dataset, convcnp, TESTING_ITERATIONS)
+    # load model parameters
+    np = NP(input_dim=1, latent_dim = 128, output_dim=1, use_attention= MODELNAME=='ANP').to(device)
+    np.load_state_dict(torch.load('saved_model/EQ_' + MODELNAME+'.pt'))
+    print("successfully load %s model!" %MODELNAME)
+
+    test_loss = testing(dataset, np, TESTING_ITERATIONS)
     print ("loglikelihood on 1024 samples: %.4f"%(test_loss))
 
-    # fig = plot_sample(dataset, convcnp)
+    # fig = plot_sample(dataset, np)
     # print("save plots!")
+
+
+
 
 
 

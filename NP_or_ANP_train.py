@@ -41,7 +41,7 @@ def save_plot(epoch, data, model):
 
 if __name__ == '__main__':
     # define hyper parameters
-    device = torch.device("cuda:7")
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     TRAINING_ITERATIONS = int(2e5)
     MAX_CONTEXT_POINT = 50
     VAL_AFTER = 1e3

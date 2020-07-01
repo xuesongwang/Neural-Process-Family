@@ -10,35 +10,36 @@ This repository implements a pytorch version of Neural Process families:
 
 - [Convolutional Conditional Neural Processes](https://arxiv.org/abs/1910.13556) (ConvCNP)
 
-The fitting process of each model is presented as below:
+The fitting process of each model is presented as below. An RBF-kernel and a periodic kerenl are adopted.
  
 CNP:
 <p align="center">
-<img src="saved_fig/CNP_EQ.gif" width="200"> <img src="saved_fig/CNP_period.gif" width="200">
+<img src="saved_fig/CNP_EQ.gif" width="300"> <img src="saved_fig/CNP_period.gif" width="300">
 </p>
 NP:
 <p align="center">
-<img src="saved_fig/NP_EQ.gif" width="200"> <img src="saved_fig/NP_period.gif" width="200">
+<img src="saved_fig/NP_EQ.gif" width="300"> <img src="saved_fig/NP_period.gif" width="300">
 </p>
 ANP:
 <p align="center">
-<img src="saved_fig/ANP_EQ.gif" width="200"> <img src="saved_fig/ANP_period.gif" width="200">
+<img src="saved_fig/ANP_EQ.gif" width="300"> <img src="saved_fig/ANP_period.gif" width="300">
 </p>
 ConvCNP:
 <p align="center">
-<img src="saved_fig/ConvCNP_EQ.gif" width="200"> <img src="saved_fig/ConvCNP_period.gif" width="200">
+<img src="saved_fig/ConvCNP_EQ.gif" width="300"> <img src="saved_fig/ConvCNP_period.gif" width="300">
 </p>
 
 ## Requirements
-* Python 3.6 or higher.
-
-* `gcc` and `gfortran`:
-    On OS X, these are both installed with `brew install gcc`.
-    On Linux, `gcc` is most likely already available,
-    and `gfortran` can be installed with `apt-get install gfortran`.
+* Python 3.6+
+* Pytorch 1.4
+* matplotlib 3.1.2
+* tqdm 4.36.1+
+* numpy 0.17.1
+* pandas 0.25.1
+* tensorboard 1.14+ (optional if you do not want to visualize the training process) 
     
 
-Install the requirements and You should now be ready to go!
+To install the requirements!
 
 ```bash
 pip install -r requirements.txt
@@ -120,5 +121,7 @@ https://github.com/cambridge-mlg/convcnp
  the official NP repo
 
 * NP for sequential data, ANP-RNN： https://github.com/3springs/attentive-neural-processes
+
+* Understanding Gaussian Process with visualizations: https://distill.pub/2019/visual-exploration-gaussian-processes/ 
 
 Neural Process Papers I found useful:

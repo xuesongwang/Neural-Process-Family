@@ -42,20 +42,23 @@ def save_plot(epoch, data, model):
 
 if __name__ == '__main__':
     # define hyper parameters
-    device = torch.device("cuda:7")
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     kernel = 'period' # EQ or period
     TRAINING_ITERATIONS = int(2e5)
     MAX_CONTEXT_POINT = 50
     VAL_AFTER = 1e3
     BEST_LOSS = -np.inf
+
     # set up tensorboard
     time_stamp = time.strftime("%m-%d-%Y_%H:%M:%S", time.localtime())
     writer = SummaryWriter('runs/'+kernel+'_CNP_'+ time_stamp)
+
     # load data set
     dataset = GPCurvesReader(kernel = kernel, batch_size=64, max_num_context= MAX_CONTEXT_POINT, device=device)
     # load plot dataset for recording training progress
     # plot_data = save_plot_data(dataset, kernel) generate and save data for the first run
     plot_data = load_plot_data(kernel)
+
     cnp = CNP(input_dim=1, latent_dim = 128, output_dim=1).to(device)
     optim = torch.optim.Adam(cnp.parameters(), lr=3e-4, weight_decay=1e-5)
 
@@ -64,7 +67,6 @@ if __name__ == '__main__':
         (x_context, y_context), x_target = data.query
         mean, var = cnp(x_context.to(device), y_context.to(device), x_target.to(device))
         loss = compute_loss(mean, var, data.y_target.to(device))
-
         optim.zero_grad()
         loss.backward()
         optim.step()
