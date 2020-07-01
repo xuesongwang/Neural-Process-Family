@@ -13,9 +13,13 @@ This repository implements a pytorch version of Neural Process families:
 The fitting process of each model is presented as below. An RBF-kernel and a periodic kerenl are adopted.
  
  
-RBF kernel <img src="saved_fig/rbf-kernel-eq.png" width="200">
+RBF kernel:
+ 
+ <img src="saved_fig/rbf-kernel-eq.png" width="170">
 
-Periodic kernel <img src="saved_fig/periodic-kernel-eq.png" width="200">
+Periodic kernel:
+ 
+ <img src="saved_fig/periodic-kernel-eq.png" width="200">
 
 
 CNP:
