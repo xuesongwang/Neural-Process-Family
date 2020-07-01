@@ -84,32 +84,36 @@ of the function `load_dataset` in `data/image_data.py` to the location of your d
 We split the downloaded training datasets into training and validating sets with the proportion: 7:3 and use additional testing sets. 
 
 ## Evaluation
-#### Off-the-grid datasets
-To evaluate my model on off-the-grid datasets, run:
+#### 1D datasets
+To evaluate models on 1D datasets, run *_test.py files. For example:
 
 ```eval
-python eval_1d.py --name EQ
+python CNP_test.py
 ```
-The argument is the same as in train_1d.py. A model called `name` + `_model.pt`
-will be loaded from the folder `saved_model`
+The arguments are the same as in *_train.py. A model `kernel` + `MODELNAME.pt`
+will be loaded from the folder `saved_model`. Each model will be tested on new 1-24 tasks.
 
-#### On-the-grid datasets
+
+#### 2D datasets
 To evaluate my model on On-the-grid datasets, run:
 ```eval
 python eval_2d.py --dataset mnist --batch-size 16
 ```
 The argument is the same as in train_2d.py. A model called `dataset` + `_model.pth.gz`
-will be loaded from the folder `saved_model`
+will be loaded from the folder `saved_model`. The commented out function `plot_sample` gives a demo of model predictions.
 
 ## Results
 
-Our model achieves the following log-likelihood (displayed in mean (variance)) on the on/off-the-grid datasets:
+The models achieve the following log-likelihood on the 1D and 2D datasets. Each model is tested for 10 runs and the results are 
+ displayed in mean (variance). 
 
+| Model name          | EQ              | Periodic       |
+| ------------------- |---------------- | -------------- |
+| NP                  | 2.20 (0.02)     |    0.90 (0.03) |
+| CNP                 | 2.20 (0.02)     |    0.90 (0.03) |
+| ANP                 | 2.20 (0.02)     |    0.90 (0.03) |
+| ConvCNP             | 2.20 (0.02)     |    0.90 (0.03) |
 
-
-| Model name         | EQ              | Matern         |  Period       | Smart Meter   |
-| ------------------ |---------------- | -------------- |-------------- | --------------|
-| NP-PROV            | 2.20 (0.02)     |    0.90 (0.03) |  -1.00 (0.02) | 2.32 (0.05)   |
 
 | Model name         | MNIST           | SVHN           |  celebA       | miniImageNet   |
 | ------------------ |---------------- | -------------- |-------------- | -------------- |
