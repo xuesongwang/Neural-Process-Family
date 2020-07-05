@@ -17,9 +17,9 @@ The fitting processes(w.r.t epochs) of each model are presented as follows.
  
 | Model name          | EQ                                               | Periodic                                             | MNIST                                               | SVHN                                                | celebA                                            |
 | ------------------- |--------------------------------------------------| -----------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|---------------------------------------------------|
-| NP                  | <img src="saved_fig/gif/NP_EQ.gif" width="210">  | <img src="saved_fig/gif/NP_period.gif" width="200">  | <img src="saved_fig/gif/NP_MNIST.gif" width="200"> | <img src="saved_fig/gif/NP_SVHN.gif" width="200">| <img src="saved_fig/gif/NP_celebA.gif" width="200">   |
-| CNP                 | <img src="saved_fig/gif/CNP_EQ.gif" width="210"> | <img src="saved_fig/gif/CNP_period.gif" width="200"> | <img src="saved_fig/gif/CNP_MNIST.gif" width="200"> | <img src="saved_fig/gif/CNP_SVHN.gif" width="200">| <img src="saved_fig/gif/CNP_celebA.gif" width="200">|
-| ANP                 | <img src="saved_fig/gif/ANP_EQ.gif" width="210"> | <img src="saved_fig/gif/ANP_period.gif" width="200"> | <img src="saved_fig/gif/ANP_MNIST.gif" width="200"> | <img src="saved_fig/gif/ANP_SVHN.gif" width="200">| <img src="saved_fig/gif/ANP_celebA.gif" width="200">|
+| NP                  | <img src="saved_fig/gif/NP_EQ.gif" width="210">  | <img src="saved_fig/gif/NP_period.gif" width="200">  | <img src="saved_fig/gif/NP_MNIST.gif" width="300"> | <img src="saved_fig/gif/NP_SVHN.gif" width="200">| <img src="saved_fig/gif/NP_celebA.gif" width="200">   |
+| CNP                 | <img src="saved_fig/gif/CNP_EQ.gif" width="210"> | <img src="saved_fig/gif/CNP_period.gif" width="200"> | <img src="saved_fig/gif/CNP_MNIST.gif" width="300"> | <img src="saved_fig/gif/CNP_SVHN.gif" width="200">| <img src="saved_fig/gif/CNP_celebA.gif" width="200">|
+| ANP                 | <img src="saved_fig/gif/ANP_EQ.gif" width="210"> | <img src="saved_fig/gif/ANP_period.gif" width="200"> | <img src="saved_fig/gif/ANP_MNIST.gif" width="300"> | <img src="saved_fig/gif/ANP_SVHN.gif" width="200">| <img src="saved_fig/gif/ANP_celebA.gif" width="200">|
 | ConvCNP             | <img src="saved_fig/gif/ConvCNP_EQ.gif" width="210"> | <img src="saved_fig/gif/ConvCNP_period.gif" width="200"> |
 
 ## Requirements
