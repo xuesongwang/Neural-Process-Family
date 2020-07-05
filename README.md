@@ -15,6 +15,15 @@ Contributions of the authors were appreciated in the reference. Discussions with
  
 The fitting processes of each model are presented as follows. An EQ-kernel (left) and a periodic kernel (right) are used.
  
+| Model name          | EQ                                               | Periodic                                             | MNIST          | SVHN           | celebA         |
+| ------------------- |--------------------------------------------------| -----------------------------------------------------|--------------  |--------------  |--------------  |
+| NP                  | <img src="saved_fig/gif/CNP_EQ.gif" width="300"> |  <img src="saved_fig/gif/CNP_period.gif" width="300">| 1.66 (4e-2)    | 1.30 (4e-3)    | 0.91 (1e-2)
+| CNP                 | 1.30 (2e-2)     |    0.47 (0)    | 2.22 (4e-2)    | 1.33 (4e-3)    | 0.90 (2e-2)    |
+| ANP                 | 2.00 (2e-2)     |    1.03 (1e-2) | 2.34 (8e-2)    | 2.43 (2e-2)    | 1.55 (4e-2)
+| ConvCNP             | 2.53 (3e-2)     |    1.43 (2e-2) |
+
+
+ 
 CNP:
 <p align="center">
 <img src="saved_fig/gif/CNP_EQ.gif" width="300"> <img src="saved_fig/gif/CNP_period.gif" width="300">
@@ -75,18 +84,12 @@ Every 1,000 epochs, the model will be validated using new 64 tasks and the best 
 We also build a function to save the plots of model predictions on a fixed sample data and record the training progress as welll as baseline comparisons (as shown in the gif). 
      
 #### 2D datasets      
-To train the models for 2D datasets, run this command:
+To train the model(s) for image datasets, run *_train_2d.py files. For example:
 ```train
-python train_2d.py --dataset mnist --batch-size 16 --learning-rate 5e-4 --epochs 100
+python CNP_train_2d.py
 ```           
-The first argument, `dataset`(`default = mnist`), specifies the data that the model will be trained
-on, and should be one of the following:
-* `mnist`:This dataset can be downloaded using torchvision.datasets. Change the path `MNIST('./MNIST/mnist_data'...)`
-of the function `load_dataset` in `data/image_data.py` to the location of your datasets;
-* `svhn`: This dataset can also be downloaded using torchvision;
-* `celebA`: This dataset can be downloaded from http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
-
-We split the downloaded training datasets into training and validating sets with the proportion: 7:3 and use additional testing sets. 
+The arguments are similar to 1d datasets, except `kernel = 'MNIST' / 'SVHN' / 'celebA'`.
+We manually split the downloaded training datasets into training and validating sets with the proportion: 9:1(see `SubsetRandomSampler` in `Image_data_sampler`) and use additional testing sets. 
 
 ## Evaluation
 #### 1D datasets
@@ -102,10 +105,9 @@ will be loaded from the folder `saved_model`. Each model will be tested on new 1
 #### 2D datasets
 To evaluate models on 2D datasets, run:
 ```eval
-python eval_2d.py --dataset mnist --batch-size 16
+python CNP_test_2d.py
 ```
-The argument is the same as in train_2d.py. A model called `dataset` + `_model.pth.gz`
-will be loaded from the folder `saved_model`. The commented out function `plot_sample` gives a demo of model predictions.
+The arguments are the same as in *_train_2d.py.
 
 ## Results
 
