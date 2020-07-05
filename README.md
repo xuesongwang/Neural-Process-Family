@@ -15,12 +15,12 @@ Contributions of the authors were appreciated in the reference. Discussions with
  
 The fitting processes of each model are presented as follows. An EQ-kernel (left) and a periodic kernel (right) are used.
  
-| Model name          | EQ                                               | Periodic                                             | MNIST          | SVHN           | celebA         |
-| ------------------- |--------------------------------------------------| -----------------------------------------------------|--------------  |--------------  |--------------  |
-| NP                  | <img src="saved_fig/gif/NP_EQ.gif" width="200">  | <img src="saved_fig/gif/NP_period.gif" width="200">  | 1.66 (4e-2)    | 1.30 (4e-3)    | 0.91 (1e-2)    |
-| CNP                 | <img src="saved_fig/gif/CNP_EQ.gif" width="200"> | <img src="saved_fig/gif/CNP_period.gif" width="200"> | 2.22 (4e-2)    | 1.33 (4e-3)    | 0.90 (2e-2)    |
-| ANP                 | <img src="saved_fig/gif/ANP_EQ.gif" width="200"> | <img src="saved_fig/gif/ANP_period.gif" width="200"> | 2.34 (8e-2)    | 2.43 (2e-2)    | 1.55 (4e-2)    |
-| ConvCNP             | <img src="saved_fig/gif/ConvCNP_EQ.gif" width="200"> | <img src="saved_fig/gif/ConvCNP_period.gif" width="300"> |
+| Model name          | EQ                                               | Periodic                                             | MNIST                                               | SVHN           | celebA         |
+| ------------------- |--------------------------------------------------| -----------------------------------------------------|-----------------------------------------------------|--------------  |--------------  |
+| NP                  | <img src="saved_fig/gif/NP_EQ.gif" width="220">  | <img src="saved_fig/gif/NP_period.gif" width="200">  | <img src="saved_fig/gif/NP_MNIST.gif" width="200"> | 1.30 (4e-3)    | 0.91 (1e-2)    |
+| CNP                 | <img src="saved_fig/gif/CNP_EQ.gif" width="220"> | <img src="saved_fig/gif/CNP_period.gif" width="200"> | 2.22 (4e-2)    | 1.33 (4e-3)    | 0.90 (2e-2)    |
+| ANP                 | <img src="saved_fig/gif/ANP_EQ.gif" width="220"> | <img src="saved_fig/gif/ANP_period.gif" width="200"> | 2.34 (8e-2)    | 2.43 (2e-2)    | 1.55 (4e-2)    |
+| ConvCNP             | <img src="saved_fig/gif/ConvCNP_EQ.gif" width="220"> | <img src="saved_fig/gif/ConvCNP_period.gif" width="200"> |
 
 ## Requirements
 * Python 3.6+
