@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.utils import init_sequential_weights, init_layer_weights
+from module.utils import init_sequential_weights, init_layer_weights
 
 def compute_dists(x, y):
     """Fast computation of pair-wise distances for the 1d case.
@@ -393,7 +393,7 @@ class FinalLayer(nn.Module):
 
 
 class ConvCNP(nn.Module):
-    """One-dimensional ConvCNP model.
+    """One-dimensional ConvCNP module.
 
     Args:
         learn_length_scale (bool): Learn the length scale.
@@ -425,7 +425,7 @@ class ConvCNP(nn.Module):
                                       init_length_scale=init_length_scale)
 
     def forward(self, x, y, x_out):
-        """Run the model forward.
+        """Run the module forward.
 
         Args:
             x (tensor): Observation locations of shape (batch, data, features).
@@ -465,6 +465,6 @@ class ConvCNP(nn.Module):
 
     @property
     def num_params(self):
-        """Number of parameters in model."""
+        """Number of parameters in module."""
         return np.sum([torch.tensor(param.shape).prod()
                        for param in self.parameters()])

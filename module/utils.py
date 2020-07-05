@@ -6,16 +6,16 @@ import pandas as pd
 from data.GP_data_sampler import NPRegressionDescription
 
 def init_sequential_weights(model, bias=0.0):
-    """Initialize the weights of a nn.Sequential model with Glorot
+    """Initialize the weights of a nn.Sequential module with Glorot
     initialization.
 
     Args:
-        model (:class:`nn.Sequential`): Container for model.
+        model (:class:`nn.Sequential`): Container for module.
         bias (float, optional): Value for initializing bias terms. Defaults
             to `0.0`.
 
     Returns:
-        (nn.Sequential): model with initialized weights
+        (nn.Sequential): module with initialized weights
     """
     for layer in model:
         if hasattr(layer, 'weight'):

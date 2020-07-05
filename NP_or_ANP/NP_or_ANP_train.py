@@ -1,6 +1,6 @@
 from data.GP_data_sampler import GPCurvesReader
-from model.NP import NeuralProcess as NP
-from model.utils import compute_loss, comput_kl_loss, to_numpy, load_plot_data
+from NP_or_ANP.NP import NeuralProcess as NP
+from module.utils import compute_loss, comput_kl_loss, to_numpy, load_plot_data
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
@@ -81,7 +81,7 @@ if __name__ == '__main__':
             writer.add_scalars("Log-likelihood", {"val": val_loss}, epoch)
             if val_loss > BEST_LOSS:
                 BEST_LOSS = val_loss
-                print("save model at epoch: %d, val log-likelihood: %.4f" %(epoch, val_loss))
+                print("save module at epoch: %d, val log-likelihood: %.4f" %(epoch, val_loss))
                 torch.save(np.state_dict(), 'saved_model/'+kernel+'_' + MODELNAME+'.pt')
     writer.close()
     print("finished training: " + MODELNAME)

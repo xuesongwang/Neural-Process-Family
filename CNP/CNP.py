@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from model.module import DeterministicEncoder, DeterministicDecoder
+from module.module import DeterministicEncoder, DeterministicDecoder
 
 class ConditionalNeuralProcess(nn.Module):
-    """Conditional Neural Process model.
+    """Conditional Neural Process module.
 
     See https://arxiv.org/abs/1807.01613 for details.
 

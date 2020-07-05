@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 import numpy as np
-from model.utils import init_sequential_weights
+from module.utils import init_sequential_weights
 from torch.distributions import Normal
 
 class DotProdAttention(nn.Module):
@@ -210,7 +210,7 @@ class MeanPooling(nn.Module):
         return torch.mean(h, dim=self.pooling_dim, keepdim=True)
 
 class LatentEncoder(nn.Module):
-    """Latent Encoder used for standard NP model.
+    """Latent Encoder used for standard NP module.
 
     Args:
         input_dim (int): Dimensionality of the input.
@@ -268,7 +268,7 @@ class LatentEncoder(nn.Module):
         return dist
 
 class DeterministicEncoder(nn.Module):
-    """Encoder used for standard CNP model.
+    """Encoder used for standard CNP module.
 
     Args:
         input_dim (int): Dimensionality of the input.
@@ -327,7 +327,7 @@ class DeterministicEncoder(nn.Module):
         return self.pooling_fn(h, x_context, x_target)
 
 class DeterministicDecoder(nn.Module):
-    """Decoder used for standard CNP model.
+    """Decoder used for standard CNP module.
 
     Args:
         input_dim (int): Dimensionality of the input.

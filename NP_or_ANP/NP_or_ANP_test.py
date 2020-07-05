@@ -1,6 +1,6 @@
 from data.GP_data_sampler import GPCurvesReader
-from model.NP import NeuralProcess as NP
-from model.utils import compute_loss, to_numpy
+from NP_or_ANP.NP import NeuralProcess as NP
+from module.utils import compute_loss, to_numpy
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -49,10 +49,10 @@ if __name__ == '__main__':
     # load data set
     dataset = GPCurvesReader(kernel=kernel, batch_size=64, max_num_context= MAX_CONTEXT_POINT, device=device)
 
-    # load model parameters
+    # load module parameters
     np = NP(input_dim=1, latent_dim = 128, output_dim=1, use_attention= MODELNAME=='ANP').to(device)
     np.load_state_dict(torch.load('saved_model/'+kernel+'_' + MODELNAME+'.pt'))
-    print("successfully load %s model!" %MODELNAME)
+    print("successfully load %s module!" %MODELNAME)
 
     # total_loss = []
     # for _ in range(10):

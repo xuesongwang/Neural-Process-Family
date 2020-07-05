@@ -15,7 +15,7 @@ Contributions of the authors were deeply appreciated in the reference. Discussio
  
 The fitting processes(w.r.t epochs) of each model are presented as follows. For image datasets, we displayed unmasked images(left), predicted mean(middle) and variance(right).
  
-| Model name          | EQ                                               | Periodic                                             | MNIST                                               | SVHN                                                | celebA                                            |
+| Model name          | EQ                                               | Periodic                                             | MNIST                                               | SVHN                                                | CelebA                                            |
 | ------------------- |--------------------------------------------------| -----------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|---------------------------------------------------|
 | NP                  | <img src="saved_fig/gif/NP_EQ.gif" width="210">  | <img src="saved_fig/gif/NP_period.gif" width="200">  | <img src="saved_fig/gif/NP_MNIST.gif" width="200"> | <img src="saved_fig/gif/NP_SVHN.gif" width="200">| <img src="saved_fig/gif/NP_celebA.gif" width="200">   |
 | CNP                 | <img src="saved_fig/gif/CNP_EQ.gif" width="210"> | <img src="saved_fig/gif/CNP_period.gif" width="200"> | <img src="saved_fig/gif/CNP_MNIST.gif" width="200"> | <img src="saved_fig/gif/CNP_SVHN.gif" width="200">| <img src="saved_fig/gif/CNP_celebA.gif" width="200">|
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 ## Training
 
 #### 1D datasets
-To train the model(s) for 1D Gaussian Process sampled datasets, run *_train.py files. For example:
+To train the model(s) for 1D Gaussian Process sampled datasets, run *_train.py files. For example, in the folder `CNP` :
 
 ```train
 python CNP_train.py

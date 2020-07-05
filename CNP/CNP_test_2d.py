@@ -1,12 +1,10 @@
 from data.Image_data_sampler import ImageReader
-from model.CNP import ConditionalNeuralProcess as CNP
-from model.utils import compute_loss, to_numpy, load_plot_data, save_plot_data,\
-    img_mask_to_np_input, generate_mask, np_input_to_img
+from CNP.CNP import ConditionalNeuralProcess as CNP
+from module.utils import compute_loss, to_numpy, img_mask_to_np_input, generate_mask, np_input_to_img
 import torch
 from torchvision.utils import make_grid
 import numpy as np
 from tqdm import tqdm
-import time
 import matplotlib.pyplot as plt
 
 def testing(data_test, model):
@@ -57,7 +55,7 @@ if __name__ == '__main__':
     dataset = ImageReader(dataset = kernel, batch_size=64, datapath='/share/scratch/xuesongwang/metadata/')
     cnp = CNP(input_dim=2, latent_dim = 128, output_dim=3 if kernel != 'MNIST' else 1).to(device)
     cnp.load_state_dict(torch.load('saved_model/' + kernel + '_CNP.pt'))
-    print("successfully load CNP model!")
+    print("successfully load CNP module!")
     total_loss = []
     for _ in range(10):
         test_loss = testing(dataset.testloader, cnp)

@@ -1,11 +1,9 @@
 from data.Image_data_sampler import ImageReader
-from model.NP import NeuralProcess as NP
-from model.utils import compute_loss, comput_kl_loss, to_numpy, load_plot_data, save_plot_data,\
-    img_mask_to_np_input, generate_mask, np_input_to_img
+from NP_or_ANP.NP import NeuralProcess as NP
+from module.utils import compute_loss, to_numpy, img_mask_to_np_input, generate_mask, np_input_to_img
 import torch
 import numpy
 from tqdm import tqdm
-import time
 import matplotlib.pyplot as plt
 from torchvision.utils import make_grid
 
@@ -58,7 +56,7 @@ if __name__ == '__main__':
     dataset = ImageReader(dataset=kernel, batch_size=64, datapath='/share/scratch/xuesongwang/metadata/')
     np = NP(input_dim=2, latent_dim = 128, output_dim=3 if kernel != 'MNIST' else 1, use_attention=MODELNAME=='ANP').to(device)
     np.load_state_dict(torch.load('saved_model/'+kernel+'_' + MODELNAME+'.pt'))
-    print("successfully load %s model!"%MODELNAME)
+    print("successfully load %s module!"%MODELNAME)
 
     total_loss = []
     for _ in range(10):

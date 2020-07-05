@@ -1,10 +1,10 @@
 import torch.nn as nn
 import torch
 import numpy as np
-from model.module import DeterministicDecoder, DeterministicEncoder, LatentEncoder
+from module.module import DeterministicDecoder, DeterministicEncoder, LatentEncoder
 
 class NeuralProcess(nn.Module):
-    """(Attentive) Neural Process model.
+    """(Attentive) Neural Process module.
 
     See https://arxiv.org/abs/1807.01613 for details.
 
