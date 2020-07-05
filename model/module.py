@@ -279,6 +279,7 @@ class DeterministicEncoder(nn.Module):
     def __init__(self,
                  input_dim,
                  latent_dim,
+                 attent_input_dim = 1,
                  use_attention=False):
         super(DeterministicEncoder, self).__init__()
 
@@ -297,7 +298,7 @@ class DeterministicEncoder(nn.Module):
         )
         self.pre_pooling_fn = init_sequential_weights(pre_pooling_fn)
         if self.use_attention:
-            self.pooling_fn = CrossAttention()
+            self.pooling_fn = CrossAttention(attent_input_dim)
         else:
             self.pooling_fn = MeanPooling(pooling_dim=1)
 

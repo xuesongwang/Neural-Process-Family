@@ -1,7 +1,7 @@
 
-# Neural Process Families
+# Neural Process Family
 
-This repository implements a pytorch version of Neural Process families:
+This repository implements a pytorch version of Neural Process family:
 - [Conditional Neural Processes](https://arxiv.org/abs/1807.01613) (CNP)
 
 - [Neural Processes](https://arxiv.org/abs/1807.01622) (NP)
@@ -10,23 +10,26 @@ This repository implements a pytorch version of Neural Process families:
 
 - [Convolutional Conditional Neural Processes](https://arxiv.org/abs/1910.13556) (ConvCNP)
 
-The fitting processes of each model are presented as below. An EQ-kernel and a periodic kerenl are used.
+Most of the codes are inspired by the official implementations, except that I use uniformed training settings and evaluation criteria. 
+Contributions of the authors were appreciated in the reference. Discussions with some of them really help me understand better of NP.
+ 
+The fitting processes of each model are presented as follows. An EQ-kernel (left) and a periodic kernel (right) are used.
  
 CNP:
 <p align="center">
-<img src="saved_fig/CNP_EQ.gif" width="300"> <img src="saved_fig/CNP_period.gif" width="300">
+<img src="saved_fig/gif/CNP_EQ.gif" width="300"> <img src="saved_fig/gif/CNP_period.gif" width="300">
 </p>
 NP:
 <p align="center">
-<img src="saved_fig/NP_EQ.gif" width="300"> <img src="saved_fig/NP_period.gif" width="300">
+<img src="saved_fig/gif/NP_EQ.gif" width="300"> <img src="saved_fig/gif/NP_period.gif" width="300">
 </p>
 ANP:
 <p align="center">
-<img src="saved_fig/ANP_EQ.gif" width="300"> <img src="saved_fig/ANP_period.gif" width="300">
+<img src="saved_fig/gif/ANP_EQ.gif" width="300"> <img src="saved_fig/gif/ANP_period.gif" width="300">
 </p>
 ConvCNP:
 <p align="center">
-<img src="saved_fig/ConvCNP_EQ.gif" width="300"> <img src="saved_fig/ConvCNP_period.gif" width="300">
+<img src="saved_fig/gif/ConvCNP_EQ.gif" width="300"> <img src="saved_fig/gif/ConvCNP_period.gif" width="300">
 </p>
 
 ## Requirements
@@ -111,10 +114,10 @@ We measure the log-likelihood on 1D and 2D datasets. Each model is tested for 10
 
 | Model name          | EQ              | Periodic       | MNIST          | SVHN           | celebA         |
 | ------------------- |---------------- | -------------- |--------------  |--------------  |--------------  |
-| NP                  | 1.11 (1e-2)     |    0.18 (1e-2) |
-| CNP                 | 1.30 (2e-2)     |    0.47 (0)    | 
-| ANP                 | 2.00 (2e-2)     |    1.03 (1e-2) |
-| ConvCNP             | 2.53 (3e-2)     |    1.43 (2e-2)  |
+| NP                  | 1.11 (1e-2)     |    0.18 (1e-2) | 1.66 (4e-2)    | 1.30 (4e-3)    | 0.91 (1e-2)
+| CNP                 | 1.30 (2e-2)     |    0.47 (0)    | 2.22 (4e-2)    | 1.33 (4e-3)    | 0.90 (2e-2)    |
+| ANP                 | 2.00 (2e-2)     |    1.03 (1e-2) | 2.34 (8e-2)    | 2.43 (2e-2)    | 1.55 (4e-2)
+| ConvCNP             | 2.53 (3e-2)     |    1.43 (2e-2) |
 
 
 ## References
@@ -125,6 +128,8 @@ https://github.com/deepmind/neural-processes
 https://github.com/cambridge-mlg/convcnp
  . Our reproduction of NP and CNP is inspired by this repo, except that we use the same GPsampler and evaluation as in 
  the official NP repo
+ 
+* Preprocessing 2d datasets, https://github.com/EmilienDupont/neural-processes  
 
 * NP for sequential data, ANP-RNN： https://github.com/3springs/attentive-neural-processes
 

@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # define hyper parameters
     device = torch.device('cuda:7' if torch.cuda.is_available() else 'cpu')
     MODELNAME = 'ANP' # 'NP' or 'ANP'
-    kernel = 'SVHN'  # EQ/ period / MNIST/ SVHN / celebA
+    kernel = 'MNIST'  # EQ/ period / MNIST/ SVHN / celebA
 
     # load data set
     dataset = ImageReader(dataset=kernel, batch_size=64, datapath='/share/scratch/xuesongwang/metadata/')
