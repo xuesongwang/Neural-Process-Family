@@ -1,6 +1,6 @@
-from GPdata_sampler import GPCurvesReader
+from data.GP_data_sampler import GPCurvesReader
 from model.CNP import ConditionalNeuralProcess as CNP
-from model.utils import compute_loss, to_numpy, load_plot_data, save_plot_data
+from model.utils import compute_loss, to_numpy, load_plot_data
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np

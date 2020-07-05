@@ -9,7 +9,7 @@ def rename_file(kernel):
         rename('CNP/'+kernel+'/'+fname,'CNP/'+kernel+'/'+ "%03d"%(int(fname[:-4])) +".png")
 
 def build_gif(modelname, kernel):
-    # Build GIF.
+    # Build GIF, the images were saved in the folder: modelname/kernel and were named with "0001.png" format
     subprocess.call(['convert',
                      '-delay', '20',
                      '-loop', '0',
@@ -17,8 +17,8 @@ def build_gif(modelname, kernel):
     print("finished GIF!")
 
 if __name__ == '__main__':
-    kernel = 'EQ'
-    MODELNAME = 'ConvCNP'
+    kernel = 'SVHN'
+    MODELNAME = 'CNP'
     # rename_file(kernel)
     build_gif(MODELNAME, kernel)
 

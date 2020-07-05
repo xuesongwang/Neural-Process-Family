@@ -1,10 +1,10 @@
-from GPdata_sampler import GPCurvesReader
+from data.GP_data_sampler import GPCurvesReader
 from model.CNP import ConditionalNeuralProcess as CNP
 from model.utils import compute_loss, to_numpy
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-import numpy as np
+
 
 def testing(data_test, model, test_batch = 64):
     total_ll = 0
@@ -40,7 +40,7 @@ def plot_sample(dataset, model):
 
 if __name__ == '__main__':
     # define hyper parameters
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:7' if torch.cuda.is_available() else 'cpu')
     TESTING_ITERATIONS = int(1024)
     MAX_CONTEXT_POINT = 50
     kernel = 'period'  # EQ or period
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     test_loss = testing(dataset, cnp, TESTING_ITERATIONS)
     # print ("CNP loglikelihood on 1024 samples: %.4f"%(test_loss))
 
-    # fig = plot_sample(dataset, cnp)
-    # print("save plots!")
+    fig = plot_sample(dataset, cnp)
+    print("save plots!")
 
 

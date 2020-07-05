@@ -1,4 +1,4 @@
-from GPdata_sampler import GPCurvesReader
+from data.GP_data_sampler import GPCurvesReader
 from model.NP import NeuralProcess as NP
 from model.utils import compute_loss, comput_kl_loss, to_numpy, load_plot_data
 import torch

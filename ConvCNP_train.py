@@ -1,5 +1,5 @@
-from GPdata_sampler import GPCurvesReader
-from model.convCNP import ConvCNP, UNet, SimpleConv
+from data.GP_data_sampler import GPCurvesReader
+from model.convCNP import ConvCNP, UNet
 from model.utils import compute_loss, to_numpy, load_plot_data
 import torch
 from torch.utils.tensorboard import SummaryWriter
