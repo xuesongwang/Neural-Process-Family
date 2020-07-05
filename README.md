@@ -10,16 +10,16 @@ This repository implements a pytorch version of Neural Process family:
 
 - [Convolutional Conditional Neural Processes](https://arxiv.org/abs/1910.13556) (ConvCNP)
 
-Most of the codes are inspired by the official implementations, except that I use uniformed training settings and evaluation criteria. 
-Contributions of the authors were appreciated in the reference. Discussions with some of them really help me understand better of NP.
+Most of the codes are inspired by the official implementations, except that I use uniform training settings and evaluation criteria. 
+Contributions of the authors were deeply appreciated in the reference. Discussions with some of them really help me understand better of NP family.
  
-The fitting processes of each model are presented as follows. An EQ-kernel (left) and a periodic kernel (right) are used.
+The fitting processes(w.r.t epochs) of each model are presented as follows.
  
-| Model name          | EQ                                               | Periodic                                             | MNIST                                               | SVHN           | celebA         |
-| ------------------- |--------------------------------------------------| -----------------------------------------------------|-----------------------------------------------------|--------------  |--------------  |
-| NP                  | <img src="saved_fig/gif/NP_EQ.gif" width="210">  | <img src="saved_fig/gif/NP_period.gif" width="200">  | <img src="saved_fig/gif/NP_MNIST.gif" width="200"> | <img src="saved_fig/gif/NP_SVHN.gif" width="200">| <img src="saved_fig/gif/NP_celebA.gif" width="200">|
-| CNP                 | <img src="saved_fig/gif/CNP_EQ.gif" width="210"> | <img src="saved_fig/gif/CNP_period.gif" width="200"> | 2.22 (4e-2)    | 1.33 (4e-3)    | 0.90 (2e-2)    |
-| ANP                 | <img src="saved_fig/gif/ANP_EQ.gif" width="210"> | <img src="saved_fig/gif/ANP_period.gif" width="200"> | 2.34 (8e-2)    | 2.43 (2e-2)    | 1.55 (4e-2)    |
+| Model name          | EQ                                               | Periodic                                             | MNIST                                               | SVHN                                                | celebA                                            |
+| ------------------- |--------------------------------------------------| -----------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|---------------------------------------------------|
+| NP                  | <img src="saved_fig/gif/NP_EQ.gif" width="210">  | <img src="saved_fig/gif/NP_period.gif" width="200">  | <img src="saved_fig/gif/NP_MNIST.gif" width="200"> | <img src="saved_fig/gif/NP_SVHN.gif" width="200">| <img src="saved_fig/gif/NP_celebA.gif" width="200">   |
+| CNP                 | <img src="saved_fig/gif/CNP_EQ.gif" width="210"> | <img src="saved_fig/gif/CNP_period.gif" width="200"> | <img src="saved_fig/gif/CNP_MNIST.gif" width="200"> | <img src="saved_fig/gif/CNP_SVHN.gif" width="200">| <img src="saved_fig/gif/CNP_celebA.gif" width="200">|
+| ANP                 | <img src="saved_fig/gif/ANP_EQ.gif" width="210"> | <img src="saved_fig/gif/ANP_period.gif" width="200"> | <img src="saved_fig/gif/ANP_MNIST.gif" width="200"> | <img src="saved_fig/gif/ANP_SVHN.gif" width="200">| <img src="saved_fig/gif/ANP_celebA.gif" width="200">|
 | ConvCNP             | <img src="saved_fig/gif/ConvCNP_EQ.gif" width="210"> | <img src="saved_fig/gif/ConvCNP_period.gif" width="200"> |
 
 ## Requirements
