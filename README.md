@@ -64,9 +64,9 @@ The following arguments can be modified in the first few lines of the __main__ f
 - `MODELNAME`: useful in NP_or_ANP_train.py, could be either ANP or NP 
 - `kernel`: kernel functions to generate data
    - `EQ`: samples from a GP with an exponential quadratic (EQ) kernel: <br />    
-      <img src="saved_fig/rbf-kernel-eq.png" width="140">
+      <img src="saved_fig/pngs/rbf-kernel-eq.png" width="140">
       
-   - `period`: samples from a GP with a periodic kernel: <br />  <img src="saved_fig/periodic-kernel-eq.png" width="200">
+   - `period`: samples from a GP with a periodic kernel: <br />  <img src="saved_fig/pngs/periodic-kernel-eq.png" width="200">
  
 In default, a tensorboard folder  `runs` will be created in order to save training and validation losses. 
 

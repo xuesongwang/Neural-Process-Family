@@ -74,17 +74,17 @@ def save_plot_data(data_test, kernel):
     context = to_numpy(torch.cat([x_context[0], y_context[0]], dim=-1))
     # print ("context data shape:", context.shape)
     df = pd.DataFrame(context)
-    df.to_csv('saved_fig/plot_context_'+kernel+'.csv', index=False)
+    df.to_csv('saved_fig/csv/plot_context_'+kernel+'.csv', index=False)
     target = to_numpy(torch.cat([x_target[0],y_target[0]], dim=-1))
     # print("target data shape:", target.shape)
     df = pd.DataFrame(target)
-    df.to_csv('saved_fig/plot_target_' + kernel + '.csv', index=False)
+    df.to_csv('saved_fig/csv/plot_target_' + kernel + '.csv', index=False)
     return data
 
 def load_plot_data(kernel):
     if kernel in ['MNIST', 'SVHN', 'celebA']:  # image datesets
-        context = pd.read_csv('saved_fig/plot_context_' + kernel + '.csv').values
-        target = pd.read_csv('saved_fig/plot_target_' + kernel + '.csv').values
+        context = pd.read_csv('saved_fig/csv/plot_context_' + kernel + '.csv').values
+        target = pd.read_csv('saved_fig/csv/plot_target_' + kernel + '.csv').values
         x_context = context[:, :2]
         y_context = context[:, 2:]
         x_target = target[:, :2]
@@ -92,8 +92,8 @@ def load_plot_data(kernel):
         query = (to_tensor(x_context), to_tensor(y_context)), to_tensor(x_target)
         y_target = to_tensor(y_target)
     else: # GP datasets
-        context = pd.read_csv('saved_fig/plot_context_'+kernel+'.csv')
-        target = pd.read_csv('saved_fig/plot_target_' + kernel + '.csv')
+        context = pd.read_csv('saved_fig/csv/plot_context_'+kernel+'.csv')
+        target = pd.read_csv('saved_fig/csv/plot_target_' + kernel + '.csv')
         query = (to_tensor(context['x_context']), to_tensor(context['y_context'])), to_tensor(target['x_target'])
         y_target = to_tensor(target['y_target'])
     return NPRegressionDescription(query=query, y_target=y_target, \

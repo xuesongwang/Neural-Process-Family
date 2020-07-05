@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 import time
 import matplotlib.pyplot as plt
+import os
 
 def validation(data_test, model, test_batch = 64):
     total_ll = 0
@@ -35,6 +36,8 @@ def save_plot(epoch, data, model):
     plt.legend(loc = 'upper right')
     plt.title("epoch:%d"%epoch)
     plt.ylim(-0.5, 1.7)
+    if not os.path.exists("saved_fig/"+MODELNAME+"/"+kernel):
+        os.mkdir("saved_fig/"+MODELNAME+"/"+kernel)
     plt.savefig("saved_fig/"+MODELNAME+"/"+kernel+"/"+"%04d"%(epoch//100)+".png")
     plt.close()
     return fig

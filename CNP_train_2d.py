@@ -8,6 +8,7 @@ import numpy as np
 from tqdm import tqdm
 import time
 import matplotlib.pyplot as plt
+import os
 
 def validation(data_val, model):
     total_ll = 0
@@ -42,6 +43,8 @@ def save_plot(epoch, data, model, imgsize):
     plt.title("epoch:%d" % epoch)
     # last squeeze for removing color channel for gray scale image
     plt.imshow(to_numpy(img_recover.squeeze(0).permute(1,2,0).squeeze()))
+    if not os.path.exists("saved_fig/CNP/"+kernel):
+        os.mkdir("saved_fig/CNP/"+kernel)
     plt.savefig("saved_fig/CNP/"+kernel+"/"+"%03d"%(epoch)+".png")
     plt.close()
     return fig
