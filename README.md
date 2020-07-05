@@ -13,7 +13,7 @@ This repository implements a pytorch version of Neural Process family:
 Most of the codes are inspired by the official implementations, except that I use uniform training settings and evaluation criteria. 
 Contributions of the authors were deeply appreciated in the reference. Discussions with some of them really help me understand better of NP family.
  
-The fitting processes(w.r.t epochs) of each model are presented as follows. For image datasets, we displayed unmasked images(left), prediction mean(middle) and variance(right).
+The fitting processes(w.r.t epochs) of each model are presented as follows. For image datasets, we displayed unmasked images(left), predicted mean(middle) and variance(right).
  
 | Model name          | EQ                                               | Periodic                                             | MNIST                                               | SVHN                                                | celebA                                            |
 | ------------------- |--------------------------------------------------| -----------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|---------------------------------------------------|
