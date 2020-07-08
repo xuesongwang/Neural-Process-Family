@@ -70,6 +70,7 @@ To train the model(s) for image datasets, run *_train_2d.py files. For example:
 python CNP_train_2d.py
 ```           
 The arguments are similar to 1d datasets, except `kernel = 'MNIST' / 'SVHN' / 'celebA'`.
+In every `*_train_2d.py` and `_test_2d.py`, you are supposed to set your own image dataset path by changing `dataset = ImageReader(dataset = kernel, batch_size=64, datapath='/share/scratch/xuesongwang/metadata/')`.
 We manually split the downloaded training datasets into training and validating sets with the proportion: 9:1(see `SubsetRandomSampler` in `Image_data_sampler`) and use additional testing sets. 
 
 ## Evaluation
