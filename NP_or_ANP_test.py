@@ -4,7 +4,7 @@ from module.utils import compute_loss, to_numpy
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-
+import numpy
 
 def testing(data_test, model, test_batch = 64):
     total_ll = 0

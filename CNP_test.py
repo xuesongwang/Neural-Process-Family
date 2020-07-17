@@ -4,13 +4,14 @@ from module.utils import compute_loss, to_numpy
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def testing(data_test, model, test_batch = 64):
     total_ll = 0
     model.eval()
     for i in tqdm(range(test_batch)):
-        data = data_test.generate_curves()
+        data = data_test.generate_curves(include_context=False)
         (x_context, y_context), x_target = data.query
         mean, var = model(x_context.to(device), y_context.to(device), x_target.to(device))
         loss = compute_loss(mean, var, data.y_target.to(device))
