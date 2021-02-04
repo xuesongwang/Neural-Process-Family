@@ -83,7 +83,7 @@ class MultiHeadAttention(nn.Module):
                                          bias=False)
         self.query_transform = nn.Linear(self.latent_dim,
                                            self.latent_dim, bias=False)
-        self.value_transform = nn.Linear(self.latent_dim,
+        self.value_transform = nn.Linear(self.value_dim,
                                            self.latent_dim, bias=False)
         self.attention = DotProdAttention(latent_dim=self.latent_dim,
                                           values_dim=self.latent_dim,
@@ -220,22 +220,28 @@ class LatentEncoder(nn.Module):
 
     def __init__(self,
                  input_dim,
-                 latent_dim):
+                 latent_dim,
+                 use_lstm = False):
         super(LatentEncoder, self).__init__()
 
         self.latent_dim = latent_dim
         self.input_dim = input_dim
-
-        pre_pooling_fn = nn.Sequential(
-            nn.Linear(self.input_dim, self.latent_dim),
-            nn.ReLU(),
-            nn.Linear(self.latent_dim, self.latent_dim),
-            nn.ReLU(),
-            nn.Linear(self.latent_dim, self.latent_dim),
-            nn.ReLU(),
-            nn.Linear(self.latent_dim, 2 * self.latent_dim)
-        )
-        self.pre_pooling_fn = init_sequential_weights(pre_pooling_fn)
+        self.use_lstm = use_lstm
+        # MLP encoding
+        if use_lstm == False:
+            pre_pooling_fn = nn.Sequential(
+                nn.Linear(self.input_dim, self.latent_dim),
+                nn.ReLU(),
+                nn.Linear(self.latent_dim, self.latent_dim),
+                nn.ReLU(),
+                nn.Linear(self.latent_dim, self.latent_dim),
+                nn.ReLU(),
+                nn.Linear(self.latent_dim, 2 * self.latent_dim)
+            )
+            self.pre_pooling_fn = init_sequential_weights(pre_pooling_fn)
+        else:
+        # sequential encoding
+            self.pre_pooling_fn = nn.LSTM(self.input_dim, 2*self.latent_dim, batch_first=True)
         self.pooling_fn = MeanPooling(pooling_dim=1)
         self.sigma_fn = torch.sigmoid
 
@@ -261,6 +267,8 @@ class LatentEncoder(nn.Module):
 
         decoder_input = torch.cat((x_context, y_context), dim=-1)
         h = self.pre_pooling_fn(decoder_input)
+        if self.use_lstm == True:
+            h = h[0]
         h = self.pooling_fn(h, x_context, x_target)
         mean = h[..., :self.latent_dim]
         sigma = self.sigma_fn(h[..., self.latent_dim:])
@@ -280,25 +288,31 @@ class DeterministicEncoder(nn.Module):
                  input_dim,
                  latent_dim,
                  attent_input_dim = 1,
-                 use_attention=False):
+                 use_attention=False,
+                 use_lstm = False):
         super(DeterministicEncoder, self).__init__()
 
         self.latent_dim = latent_dim
         self.input_dim = input_dim
         self.use_attention = use_attention
-
-        pre_pooling_fn = nn.Sequential(
-            nn.Linear(self.input_dim, self.latent_dim),
-            nn.ReLU(),
-            nn.Linear(self.latent_dim, self.latent_dim),
-            nn.ReLU(),
-            nn.Linear(self.latent_dim, self.latent_dim),
-            nn.ReLU(),
-            nn.Linear(self.latent_dim, self.latent_dim)
-        )
-        self.pre_pooling_fn = init_sequential_weights(pre_pooling_fn)
+        self.use_lstm = use_lstm
+        # MLP encoding
+        if use_lstm == False:
+            pre_pooling_fn = nn.Sequential(
+                nn.Linear(self.input_dim, self.latent_dim),
+                nn.ReLU(),
+                nn.Linear(self.latent_dim, self.latent_dim),
+                nn.ReLU(),
+                nn.Linear(self.latent_dim, self.latent_dim),
+                nn.ReLU(),
+                nn.Linear(self.latent_dim, self.latent_dim)
+            )
+            self.pre_pooling_fn = init_sequential_weights(pre_pooling_fn)
+        else:
+            # sequential encoding
+            self.pre_pooling_fn = nn.LSTM(self.input_dim, self.latent_dim, batch_first=True)
         if self.use_attention:
-            self.pooling_fn = CrossAttention(attent_input_dim)
+            self.pooling_fn = CrossAttention(attent_input_dim, latent_dim=self.latent_dim, values_dim=self.latent_dim)
         else:
             self.pooling_fn = MeanPooling(pooling_dim=1)
 
@@ -324,6 +338,8 @@ class DeterministicEncoder(nn.Module):
 
         decoder_input = torch.cat((x_context, y_context), dim=-1)
         h = self.pre_pooling_fn(decoder_input)
+        if self.use_lstm == True:
+            h = h[0]
         return self.pooling_fn(h, x_context, x_target)
 
 class DeterministicDecoder(nn.Module):
@@ -335,23 +351,29 @@ class DeterministicDecoder(nn.Module):
         output_dim (int): Dimensionality of the output.
     """
 
-    def __init__(self, input_dim, latent_dim, output_dim, include_latent=False):
+    def __init__(self, input_dim, latent_dim, output_dim, include_latent=False, use_attn = False, use_lstm=False):
         super(DeterministicDecoder, self).__init__()
 
         self.input_dim = input_dim
         self.latent_dim = latent_dim
         self.output_dim = output_dim
+        self.use_attn = use_attn
+        self.use_lstm = use_lstm
         # if include latent, concatenate deterministic and latent embedding before decoder
         input_latent = 2*self.latent_dim if include_latent==True else self.latent_dim
-        post_pooling_fn = nn.Sequential(
-            nn.Linear(input_latent + self.input_dim, self.latent_dim),
-            nn.ReLU(),
-            nn.Linear(self.latent_dim, self.latent_dim),
-            nn.ReLU(),
-            nn.Linear(self.latent_dim, 2 * self.output_dim),
-        )
-        # use xavier initialization for faster convergence
-        self.post_pooling_fn = init_sequential_weights(post_pooling_fn)
+        if self.use_lstm == False:
+            post_pooling_fn = nn.Sequential(
+                nn.Linear(input_latent + self.input_dim, self.latent_dim),
+                nn.ReLU(),
+                nn.Linear(self.latent_dim, self.latent_dim),
+                nn.ReLU(),
+                nn.Linear(self.latent_dim, 2 * self.output_dim),
+            )
+            # use xavier initialization for faster convergence
+            self.post_pooling_fn = init_sequential_weights(post_pooling_fn)
+        else:
+            # sequential encoding
+            self.post_pooling_fn = nn.LSTM(input_latent + self.input_dim, 2 * self.output_dim, batch_first=True)
         self.sigma_fn = nn.functional.softplus
 
     def forward(self, x, r, n=None):
@@ -373,10 +395,23 @@ class DeterministicDecoder(nn.Module):
         # Shape: (batch, num_targets, input_dim + latent_dim).
         z = torch.cat([x, r], -1)
         z = self.post_pooling_fn(z)
-
+        if self.use_lstm == True:
+            z = z[0]
         # Separate mean and standard deviations and return.
         mean = z[..., :self.output_dim]
         sigma = self.sigma_fn(z[..., self.output_dim:])
         return mean, sigma
 
+class BatchNormSequence(nn.Module):
+    """Applies batch norm on features of a batch first sequence."""
+    def __init__(self, out_channels, **kwargs):
+        super().__init__()
+        self.norm = nn.BatchNorm1d(out_channels, **kwargs)
 
+    def forward(self, x):
+        # x.shape is (Batch, Sequence, Channels)
+        # Now we want to apply batchnorm and dropout to the channels. So we put it in shape
+        # (Batch, Channels, Sequence) which is what BatchNorm1d expects
+        x = x.permute(0, 2, 1)
+        x = self.norm(x)
+        return x.permute(0, 2, 1)

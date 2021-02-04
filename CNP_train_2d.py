@@ -8,6 +8,10 @@ from tqdm import tqdm
 import time
 import matplotlib.pyplot as plt
 import os
+from torchmeta.datasets import MiniImagenet
+from torchmeta.transforms import ClassSplitter
+from torchmeta.utils.data import BatchMetaDataLoader
+from torchvision.transforms import Compose, Resize, ToTensor
 
 def validation(data_val, model):
     total_ll = 0
@@ -20,6 +24,23 @@ def validation(data_val, model):
         loss = compute_loss(mean, var, y_target.to(device))
         total_ll += -loss.item()
     return total_ll / (i+1)
+
+def validation_meta(data_test, model, VAL_ITER=10):
+    total_ll = 0
+    model.eval()
+    for i, batch in tqdm(enumerate(data_test)):
+        if i == VAL_ITER :
+            break
+        img, _ = batch["test"]
+        bs, n_shot, c, w, h = img.shape
+        img = torch.reshape(img, (bs*n_shot, c, w, h))
+        context_mask, target_mask = generate_mask(img)
+        x_context, y_context, x_target, y_target = img_mask_to_np_input(img, context_mask, target_mask, \
+                                                                        include_context=False)
+        mean, var = model(x_context.to(device), y_context.to(device), x_target.to(device))
+        loss = compute_loss(mean, var, y_target.to(device))
+        total_ll += -loss.item()
+    return total_ll / (i + 1)
 
 
 def save_plot(epoch, data, model, imgsize):
@@ -53,44 +74,85 @@ def save_plot(epoch, data, model, imgsize):
     plt.close()
     return fig
 
-if __name__ == '__main__':
-    # define hyper parameters
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+def main_nonmeta():
     TRAINING_ITERATIONS = int(200)
     BEST_LOSS = -np.inf
-    kernel = 'MNIST' # use kernel to be consistent with 1d dataset, kernel can be "MNIST", "SVHN", "celebA"
+    kernel = 'MNIST'  # use kernel to be consistent with 1d dataset, kernel can be "MNIST", "SVHN", "celebA"
     # set up tensorboard
     time_stamp = time.strftime("%m-%d-%Y_%H:%M:%S", time.localtime())
-    writer = SummaryWriter('runs/'+kernel+'_CNP_'+ time_stamp)
+    writer = SummaryWriter('runs/' + kernel + '_CNP_' + time_stamp)
 
     # load data set
-    dataset = ImageReader(dataset = kernel, batch_size=64, datapath='/share/scratch/xuesongwang/metadata/')
+    dataset = ImageReader(dataset=kernel, batch_size=64, datapath='/share/scratch/xuesongwang/metadata/')
     # load plot dataset for recording training progress
     # plot_data = save_plot_data(dataset.valloader, kernel) # generate and save data for the first run
-    plot_data = load_plot_data(kernel)
+    # plot_data = load_plot_data(kernel)
 
-    cnp = CNP(input_dim=2, latent_dim = 128, output_dim=3 if kernel != 'MNIST' else 1).to(device)
+    cnp = CNP(input_dim=2, latent_dim=128, output_dim=3 if kernel != 'MNIST' else 1).to(device)
     optim = torch.optim.Adam(cnp.parameters(), lr=3e-4, weight_decay=1e-5)
 
     for epoch in tqdm(range(TRAINING_ITERATIONS)):
         for i, (img, _) in tqdm(enumerate(dataset.trainloader)):
             context_mask, target_mask = generate_mask(img)
             x_context, y_context, x_target, y_target = img_mask_to_np_input(img, context_mask, target_mask, \
-                                                                            include_context = True)
+                                                                            include_context=True)
             mean, var = cnp(x_context.to(device), y_context.to(device), x_target.to(device))
             loss = compute_loss(mean, var, y_target.to(device))
             optim.zero_grad()
             loss.backward()
             optim.step()
-            writer.add_scalars("Image Log-likelihood", {"train":-loss.item()}, epoch)
+            writer.add_scalars("Image Log-likelihood", {"train": -loss.item()}, epoch)
         val_loss = validation(dataset.valloader, cnp)
-        save_plot(epoch, plot_data, cnp, img.shape) # save training process, optional
+        save_plot(epoch, plot_data, cnp, img.shape)  # save training process, optional
         writer.add_scalars("Image Log-likelihood", {"val": val_loss}, epoch)
         if val_loss > BEST_LOSS:
             BEST_LOSS = val_loss
-            print("save module at epoch: %d, val log-likelihood: %.4f" %(epoch, val_loss))
-            torch.save(cnp.state_dict(), 'saved_model/'+kernel+'_CNP.pt')
+            print("save module at epoch: %d, val log-likelihood: %.4f" % (epoch, val_loss))
+            torch.save(cnp.state_dict(), 'saved_model/' + kernel + '_CNP.pt')
         writer.close()
-    print("finished training CNP!"+kernel)
+    print("finished training CNP!" + kernel)
+
+def main_meta():
+    data_name = 'miniImagenet'
+    dataset = MiniImagenet("/share/scratch/xuesongwang/metadata/",
+                           num_classes_per_task=2,
+                           transform=Compose([Resize(32), ToTensor()]),
+                           meta_train =True,
+                           download=False)
+    dataset = ClassSplitter(dataset, shuffle=True, num_train_per_class=15, num_test_per_class=15)
+    dataloader = BatchMetaDataLoader(dataset, batch_size=32, num_workers=8)
+    cnp = CNP(input_dim=2, latent_dim=128, output_dim=3).to(device)
+    optim = torch.optim.Adam(cnp.parameters(), lr=3e-4, weight_decay=1e-5)
+
+    TRAINING_ITERATIONS = int(500)
+    BEST_LOSS = -np.inf
+    for epoch in range(TRAINING_ITERATIONS):
+        for i, batch in tqdm(enumerate(dataloader)):
+            img, _ = batch["train"]
+            bs, n_shot, c, w, h = img.shape
+            img = torch.reshape(img, (bs * n_shot, c, w, h))
+            context_mask, target_mask = generate_mask(img)
+            x_context, y_context, x_target, y_target = img_mask_to_np_input(img, context_mask, target_mask, \
+                                                                            include_context=False)
+            mean, var = cnp(x_context.to(device), y_context.to(device), x_target.to(device))
+            loss = compute_loss(mean, var, y_target.to(device))
+            optim.zero_grad()
+            loss.backward()
+            optim.step()
+        val_loss = validation_meta(dataloader, cnp)
+        if val_loss > BEST_LOSS:
+            BEST_LOSS = val_loss
+            print("save module at epoch: %d, val log-likelihood: %.4f" % (epoch, val_loss))
+            torch.save(cnp.state_dict(), 'saved_model/' + data_name + '_CNP.pt')
+    print("finished training CNP!" + data_name)
 
 
+
+
+
+if __name__ == '__main__':
+    # define hyper parameters
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    # main_nonmeta()
+    main_meta()
+    # main_test()

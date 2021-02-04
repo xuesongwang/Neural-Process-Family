@@ -1,14 +1,19 @@
 from data.Image_data_sampler import ImageReader
 from module.CNP import ConditionalNeuralProcess as CNP
-from module.utils import compute_loss, to_numpy, img_mask_to_np_input, generate_mask, np_input_to_img
+from module.utils import compute_loss, to_numpy, img_mask_to_np_input, generate_mask, np_input_to_img, compute_MSE
 import torch
 from torchvision.utils import make_grid
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from torchmeta.datasets import MiniImagenet
+from torchmeta.transforms import ClassSplitter
+from torchmeta.utils.data import BatchMetaDataLoader
+from torchvision.transforms import Compose, Resize, ToTensor
 
 def testing(data_test, model):
     total_ll = 0
+    total_mse = 0
     model.eval()
     for i, (img, _) in tqdm(enumerate(data_test)):
         context_mask, target_mask = generate_mask(img)
@@ -16,8 +21,28 @@ def testing(data_test, model):
                                                                         include_context=False)
         mean, var = model(x_context.to(device), y_context.to(device), x_target.to(device))
         loss = compute_loss(mean, var, y_target.to(device))
+        mse_loss = compute_MSE(mean, y_target.to(device))
         total_ll += -loss.item()
-    return total_ll / (i+1)
+        total_mse += mse_loss.item()
+    return total_ll / (i+1), total_mse/ (i+1)
+
+def testing_meta(data_test, model):
+    total_ll = 0
+    total_mse = 0
+    model.eval()
+    for i, batch in tqdm(enumerate(data_test)):
+        img, _ = batch["test"]
+        bs, n_shot, c, w, h = img.shape
+        img = torch.reshape(img, (bs*n_shot, c, w, h))
+        context_mask, target_mask = generate_mask(img)
+        x_context, y_context, x_target, y_target = img_mask_to_np_input(img, context_mask, target_mask, \
+                                                                        include_context=False)
+        mean, var = model(x_context.to(device), y_context.to(device), x_target.to(device))
+        loss = compute_loss(mean, var, y_target.to(device))
+        mse_loss = compute_MSE(mean, y_target.to(device))
+        total_ll += -loss.item()
+        total_mse += mse_loss.item()
+    return total_ll / (i + 1), total_mse / (i + 1)
 
 def plot_sample(data, model):
     img, _ = next(iter(data))
@@ -46,26 +71,57 @@ def plot_sample(data, model):
     plt.close()
     return fig
 
-if __name__ == '__main__':
-    # define hyper parameters
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    kernel = 'celebA' # use kernel to be consistent with 1d dataset, kernel can be "MNIST", "SVHN", "celebA"
+def main_nonmeta():
+    kernel = 'celebA'  # use kernel to be consistent with 1d dataset, kernel can be "MNIST", "SVHN", "celebA"
 
     # load data set
-    dataset = ImageReader(dataset = kernel, batch_size=64, datapath='/share/scratch/xuesongwang/metadata/')
-    cnp = CNP(input_dim=2, latent_dim = 128, output_dim=3 if kernel != 'MNIST' else 1).to(device)
+    dataset = ImageReader(dataset=kernel, batch_size=64, datapath='/share/scratch/xuesongwang/metadata/')
+    cnp = CNP(input_dim=2, latent_dim=128, output_dim=3 if kernel != 'MNIST' else 1).to(device)
     cnp.load_state_dict(torch.load('saved_model/' + kernel + '_CNP.pt'))
     print("successfully load CNP module!")
     total_loss = []
-    # for _ in range(10):
-    #     test_loss = testing(dataset.testloader, cnp)
-    #     total_loss.append(test_loss)
-    # print("for 10 runs, mean: %.4f, std:%.4f" %(np.mean(total_loss), np.std(total_loss)))
-    test_loss = testing(dataset.testloader, cnp)
-    print ("CNP loglikelihood on %d samples: %.4f"%(len(dataset.testloader), test_loss))
+    total_mse = []
+    for _ in range(6):
+        test_ll, test_mse = testing(dataset.testloader, cnp)
+        total_loss.append(test_ll)
+        total_mse.append(test_mse)
+    print("for 6 runs, mean: %.4f, std:%.4f" % (np.mean(total_loss), np.std(total_loss)))
+    print("for 6 runs, mean: %.4f, std:%.4f" % (np.mean(total_mse), np.std(total_mse)))
+
+    # test_ll, test_mse = testing(dataset.testloader, cnp)
+    # print ("CNP loglikelihood on %d samples: %.4f, mse: %.4f"%(len(dataset.testloader), test_ll, test_mse))
 
     # fig = plot_sample(dataset.testloader, cnp)
     # print("save plots!")
+
+def main_meta():
+    data_name = 'miniImagenet'
+    dataset = MiniImagenet("/share/scratch/xuesongwang/metadata/",
+                           num_classes_per_task=2,
+                           transform=Compose([Resize(32), ToTensor()]),
+                           meta_test =True,
+                           download=False)
+    dataset = ClassSplitter(dataset, shuffle=False, num_train_per_class=15, num_test_per_class=15)
+    testloader = BatchMetaDataLoader(dataset, batch_size=32, num_workers=8)
+    cnp = CNP(input_dim=2, latent_dim=128, output_dim=3).to(device)
+    cnp.load_state_dict(torch.load('saved_model/' + data_name + '_CNP.pt'))
+    print("successfully load CNP module!")
+    total_loss = []
+    total_mse = []
+    for _ in range(6):
+        test_ll, test_mse = testing_meta(testloader, cnp)
+        total_loss.append(test_ll)
+        total_mse.append(test_mse)
+    print("for 6 runs, mean: %.4f, std:%.4f" % (np.mean(total_loss), np.std(total_loss)))
+    print("for 6 runs, mean: %.4f, std:%.4f" % (np.mean(total_mse), np.std(total_mse)))
+    # test_ll, test_mse = testing_meta(testloader, cnp)
+    # print ("CNP loglikelihood on miniImageNet: %.4f, mse: %.4f"%(test_ll, test_mse))
+
+if __name__ == '__main__':
+    # define hyper parameters
+    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    # main_nonmeta()
+    main_meta()
 
 
 

@@ -1,21 +1,29 @@
 from data.GP_data_sampler import GPCurvesReader
 from module.NP import NeuralProcess as NP
-from module.utils import compute_loss, to_numpy
+from data.NIFTY_data_sampler import NIFTYReader
+from module.utils import compute_loss, to_numpy, compute_MSE
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import numpy
 
-def testing(data_test, model, test_batch = 64):
+def testing(data_test, model, test_batch = 64, mode ='GP'):
     total_ll = 0
+    total_mse = 0
     model.eval()
     for i in tqdm(range(test_batch)):
-        data = data_test.generate_curves(include_context=False)
-        (x_context, y_context), x_target = data.query
+        if mode == 'GP':
+            data = data_test.generate_curves(include_context=False)
+            (x_context, y_context), x_target = data.query
+        else:
+            for _, data in enumerate(data_test):  # 50 stocks per epoch, 1 batch is enough
+                (x_context, y_context), x_target = data.query
         (mean, var), _, _ = model(x_context.to(device), y_context.to(device), x_target.to(device))
         loss = compute_loss(mean, var, data.y_target.to(device))
+        mse_loss = compute_MSE(mean, data.y_target.to(device))
         total_ll += -loss.item()
-    return total_ll/(i+1)
+        total_mse += mse_loss.item()
+    return total_ll/(i+1),  total_mse / (i+1)
 
 
 def plot_sample(dataset, model):
@@ -38,33 +46,70 @@ def plot_sample(dataset, model):
     plt.show()
     return fig
 
-if __name__ == '__main__':
-    # define hyper parameters
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+def main_GP():
     TESTING_ITERATIONS = int(1024)
     MAX_CONTEXT_POINT = 50
-    MODELNAME = 'ANP' # 'NP' or 'ANP'
+    MODELNAME = 'ANP'  # 'NP' or 'ANP'
     kernel = 'EQ'  # EQ or period
     # set up tensorboard
     # load data set
-    dataset = GPCurvesReader(kernel=kernel, batch_size=64, max_num_context= MAX_CONTEXT_POINT, device=device)
+    dataset = GPCurvesReader(kernel=kernel, batch_size=64, max_num_context=MAX_CONTEXT_POINT, device=device)
 
     # load module parameters
-    np = NP(input_dim=1, latent_dim = 128, output_dim=1, use_attention= MODELNAME=='ANP').to(device)
-    np.load_state_dict(torch.load('saved_model/'+kernel+'_' + MODELNAME+'.pt'))
-    print("successfully load %s module!" %MODELNAME)
+    np = NP(input_dim=1, latent_dim=128, output_dim=1, use_attention=MODELNAME == 'ANP').to(device)
+    np.load_state_dict(torch.load('saved_model/' + kernel + '_' + MODELNAME + '.pt'))
+    print("successfully load %s module!" % MODELNAME)
 
-    # total_loss = []
-    # for _ in range(10):
-    #     test_loss = testing(dataset, np, TESTING_ITERATIONS)
-    #     total_loss.append(test_loss)
+    total_loss = []
+    total_mse = []
+    # for _ in range(6):
+    #     test_ll, test_mse = testing(dataset, np, TESTING_ITERATIONS)
+    #     total_loss.append(test_ll)
+    #     total_mse.append(test_mse)
     # print("for 10 runs, mean: %.4f, std:%.4f" % (numpy.mean(total_loss), numpy.std(total_loss)))
-
-    test_loss = testing(dataset, np, TESTING_ITERATIONS)
-    print ("loglikelihood on 1024 samples: %.4f"%(test_loss))
+    # print("for 10 runs, mean: %.4f, std:%.4f" % (numpy.mean(total_mse), numpy.std(total_mse)))
+    test_ll, test_mse = testing(dataset, np, TESTING_ITERATIONS)
+    print ("loglikelihood on 1024 samples: %.4f, mse: %.4f" % (test_ll, test_mse))
 
     # fig = plot_sample(dataset, np)
     # print("save plots!")
+
+def main_realworld():
+    # define hyper parameters
+    dataname = 'NIFTY50'  # EQ or period
+    MODELNAME = 'ANP'  # 'NP' or 'ANP'
+    MAX_CONTEXT_POINT = 50
+    TESTING_ITERATIONS = int(1024)
+    # load data set
+    dataset = NIFTYReader(batch_size=50, max_num_context=MAX_CONTEXT_POINT, device=device)
+    test_loader = dataset.test_dataloader()
+    train_loader = dataset.train_dataloader()
+    val_loader = dataset.val_dataloader()
+
+    np = NP(input_dim=1, latent_dim=128, output_dim=1, use_attention=MODELNAME == 'ANP').to(device)
+    np.load_state_dict(torch.load('saved_model/' + dataname + '_' + MODELNAME + '.pt'))
+    print("successfully load %s module!" % dataname)
+
+    total_loss = []
+    total_mse = []
+    for _ in range(6):
+        test_loss, test_mse = testing(test_loader, np, TESTING_ITERATIONS, mode='NIFTY')
+        total_loss.append(test_loss)
+        total_mse.append(test_mse)
+    print("for 6 runs, mean: %.4f, std:%.4f" % (numpy.mean(total_loss), numpy.std(total_loss)))
+    print("for 6 runs, mean: %.4f, std:%.4f" % (numpy.mean(total_mse), numpy.std(total_mse)))
+
+    # test_ll, test_mse = testing(test_loader, cnp, TESTING_ITERATIONS, mode='NIFTY')
+
+    # writer.close()
+    # print("CNP loglikelihood on 1024 samples: %.4f, mse: %.4f" % (test_ll, test_mse))
+
+
+if __name__ == '__main__':
+    # define hyper parameters
+    device = torch.device('cuda:6' if torch.cuda.is_available() else 'cpu')
+    main_GP()
+    # main_realworld()
 
 
 

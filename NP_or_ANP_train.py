@@ -1,20 +1,25 @@
 from data.GP_data_sampler import GPCurvesReader
+from data.NIFTY_data_sampler import NIFTYReader
 from module.NP import NeuralProcess as NP
 from module.utils import compute_loss, comput_kl_loss, to_numpy, load_plot_data
 import torch
 from torch.utils.tensorboard import SummaryWriter
-import numpy as np
+import numpy
 from tqdm import tqdm
 import time
 import matplotlib.pyplot as plt
 import os
 
-def validation(data_test, model, test_batch = 64):
+def validation(data_test, model, test_batch = 64, mode='GP'):
     total_ll = 0
     model.eval()
     for i in range(test_batch):
-        data = data_test.generate_curves(include_context=False)
-        (x_context, y_context), x_target = data.query
+        if mode == 'GP':
+            data = data_test.generate_curves(include_context=False)
+            (x_context, y_context), x_target = data.query
+        else:
+            for _, data in enumerate(data_test):  # 50 stocks per epoch, 1 batch is enough
+                (x_context, y_context), x_target = data.query
         (mean, var), _, _ = model(x_context.to(device), y_context.to(device), x_target.to(device))
         loss = compute_loss(mean, var, data.y_target.to(device))
         total_ll += -loss.item()
@@ -46,49 +51,104 @@ def save_plot(epoch, data, model):
     plt.close()
     return fig
 
-if __name__ == '__main__':
-    # define hyper parameters
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+def main_GP():
     TRAINING_ITERATIONS = int(2e5)
     MAX_CONTEXT_POINT = 50
     VAL_AFTER = 1e3
-    BEST_LOSS = -np.inf
-    MODELNAME = 'ANP' # 'NP' or 'ANP'
+    BEST_LOSS = -numpy.inf
+    MODELNAME = 'ANP'  # 'NP' or 'ANP'
     kernel = 'period'  # EQ or period
     # set up tensorboard
     time_stamp = time.strftime("%m-%d-%Y_%H:%M:%S", time.localtime())
-    writer = SummaryWriter('runs/'+kernel+'_' + MODELNAME +'_'+ time_stamp)
+    # writer = SummaryWriter('runs/' + kernel + '_' + MODELNAME + '_' + time_stamp)
     # load data set
-    dataset = GPCurvesReader(kernel=kernel, batch_size=64, max_num_context= MAX_CONTEXT_POINT, device=device)
+    dataset = GPCurvesReader(kernel=kernel, batch_size=64, max_num_context=MAX_CONTEXT_POINT, device=device)
     # data for recording training progress
-    plot_data = load_plot_data(kernel)
+    # plot_data = load_plot_data(kernel)
 
-    np = NP(input_dim=1, latent_dim = 128, output_dim=1, use_attention=MODELNAME=='ANP').to(device)
+    np = NP(input_dim=1, latent_dim=128, output_dim=1, use_attention=MODELNAME == 'ANP').to(device)
     optim = torch.optim.Adam(np.parameters(), lr=3e-4, weight_decay=1e-5)
 
     for epoch in tqdm(range(TRAINING_ITERATIONS)):
         data = dataset.generate_curves()
         (x_context, y_context), x_target = data.query
-        (mean, var), prior, poster = np(x_context.to(device), y_context.to(device), x_target.to(device), data.y_target.to(device))
+        (mean, var), prior, poster = np(x_context.to(device), y_context.to(device), x_target.to(device),
+                                        data.y_target.to(device))
         nll_loss = compute_loss(mean, var, data.y_target.to(device))
         kl_loss = comput_kl_loss(prior, poster)
         loss = nll_loss + kl_loss
         optim.zero_grad()
         loss.backward()
         optim.step()
-        writer.add_scalars("Log-likelihood", {"train/overall": -loss.item(),
-                                              "train/ll": -nll_loss.item(),
-                                              "train/kl": kl_loss.item()}, epoch)
-        if (epoch % 100 == 0 and epoch<VAL_AFTER) or  epoch % VAL_AFTER == 0:
+        # writer.add_scalars("Log-likelihood", {"train/overall": -loss.item(),
+        #                                       "train/ll": -nll_loss.item(),
+        #                                       "train/kl": kl_loss.item()}, epoch)
+        if (epoch % 100 == 0 and epoch < VAL_AFTER) or epoch % VAL_AFTER == 0:
             val_loss = validation(dataset, np)
             # save_plot(epoch, plot_data, np)
-            writer.add_scalars("Log-likelihood", {"val": val_loss}, epoch)
+            # writer.add_scalars("Log-likelihood", {"val": val_loss}, epoch)
             if val_loss > BEST_LOSS:
                 BEST_LOSS = val_loss
-                print("save module at epoch: %d, val log-likelihood: %.4f" %(epoch, val_loss))
-                torch.save(np.state_dict(), 'saved_model/'+kernel+'_' + MODELNAME+'.pt')
-    writer.close()
+                print("save module at epoch: %d, val log-likelihood: %.4f" % (epoch, val_loss))
+                torch.save(np.state_dict(), 'saved_model/' + kernel + '_' + MODELNAME + '.pt')
+    # writer.close()
     print("finished training: " + MODELNAME)
+
+def main_realworld():
+    # define hyper parameters
+    dataname = 'NIFTY50'  # EQ or period
+    MODELNAME = 'ANP'  # 'NP' or 'ANP'
+    TRAINING_ITERATIONS = int(2e4)
+    MAX_CONTEXT_POINT = 50
+    VAL_AFTER = 1e2
+    BEST_LOSS = -numpy.inf
+
+    # set up tensorboard
+    time_stamp = time.strftime("%m-%d-%Y_%H:%M:%S", time.localtime())
+    # writer = SummaryWriter('runs/' + dataname + '_ConvCNP_' + time_stamp)
+
+    # load data set
+    dataset = NIFTYReader(batch_size=50, max_num_context=MAX_CONTEXT_POINT, device=device)
+    train_loader = dataset.train_dataloader()
+    val_loader = dataset.val_dataloader()
+    test_loader = dataset.test_dataloader()
+
+    np = NP(input_dim=1, latent_dim=128, output_dim=1, use_attention=MODELNAME == 'ANP').to(device)
+    optim = torch.optim.Adam(np.parameters(), lr=3e-4, weight_decay=1e-5)
+
+    for epoch in tqdm(range(TRAINING_ITERATIONS)):
+        for i, data in enumerate(train_loader):  # 50 stocks per epoch, 1 batch is enough
+            (x_context, y_context), x_target = data.query
+        # y_context_norm, y_mean, y_std = normalize(y_context)
+        # y_target_norm, _, _ = normalize(data.y_target, y_mean, y_std)
+        (mean, var), prior, poster = np(x_context.to(device), y_context.to(device),
+                                        x_target.to(device), data.y_target.to(device))
+        nll_loss = compute_loss(mean, var, data.y_target.to(device))
+        kl_loss = comput_kl_loss(prior, poster)
+        loss = nll_loss + kl_loss
+        optim.zero_grad()
+        loss.backward()
+        optim.step()
+        # writer.add_scalars("Log-likelihood", {"train": -loss.item()}, epoch)
+        # print("epoch: %d,  training log-liklihood: %.4f" % (epoch, -loss.item()))
+        if (epoch % 50 == 0 and epoch < VAL_AFTER) or epoch % VAL_AFTER == 0:
+            val_loss = validation(val_loader, np, test_batch=1, mode="NIFTY")
+            # save_plot(epoch, plot_data, cnp)  # save training process, optional
+            # writer.add_scalars("Log-likelihood", {"val": val_loss}, epoch)
+            if val_loss > BEST_LOSS:
+                BEST_LOSS = val_loss
+                print("save module at epoch: %d, val log-likelihood: %.4f, training loss:%.4f" %
+                      (epoch, val_loss, -loss))
+                torch.save(np.state_dict(), 'saved_model/' + dataname + '_' + MODELNAME + '.pt')
+    # writer.close()
+    print("finished training " + MODELNAME + " !"+ dataname)
+
+
+if __name__ == '__main__':
+    # define hyper parameters
+    device = torch.device('cuda:6' if torch.cuda.is_available() else 'cpu')
+    main_GP()
+    # main_realworld()
 
 
 

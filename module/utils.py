@@ -2,8 +2,12 @@ import torch.nn as nn
 from torch.distributions import Normal
 from torch.distributions.kl import kl_divergence
 import torch
+import torch.nn.functional as F
 import pandas as pd
 from data.GP_data_sampler import NPRegressionDescription
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+import matplotlib.pyplot as plt
 
 def init_sequential_weights(model, bias=0.0):
     """Initialize the weights of a nn.Sequential module with Glorot
@@ -45,10 +49,42 @@ def compute_loss(mean, var, y_target):
     loss = - torch.mean(log_prob)
     return loss
 
+def compute_MSE(mean, y_target):
+    criterion = nn.MSELoss()
+    mean_mse = criterion(mean, y_target)
+    return mean_mse
+
 def comput_kl_loss(prior, poster):
-    div = kl_divergence(poster, prior)
-    div = torch.mean(div, dim=0).sum()
+    if type(prior) == list:
+        assert len(prior) == len(poster), "length of KL distributions needs to be the same"
+        div = [torch.mean(kl_divergence(poster[t], prior[t]), dim=0).sum() for t in range(len(prior))]
+        div = torch.stack(div).mean()
+    else:
+        div = kl_divergence(poster, prior)
+        div = torch.mean(div, dim=0).sum()
     return div
+
+def temp_plot(x_context, y_context, x_all, mu_s, sigma_s, pred_mu, pred_sigma):
+    plt.scatter(x_context, y_context, c='red')
+    plt.plot(x_all, mu_s)
+    plt.plot(x_all, pred_mu, c = 'green')
+    plt.fill_between(x_all, mu_s - 1.94*sigma_s, mu_s + 1.94*sigma_s, alpha=0.2)
+    plt.fill_between(x_all, pred_mu - 1.94*pred_sigma, pred_mu + 1.94*pred_sigma, alpha = 0.2, color= 'green')
+    plt.show()
+
+def compute_mse_loss(x_context, y_context, x_all, predict_mean, predict_var):
+    # genertate x_all
+    # mu_s, sigma_s = posterior_predictive(x_all, x_context, y_context)
+    criterion = nn.MSELoss()
+    kernel = C(1.0, (1e-2, 1)) * RBF(0.4, (1e-2, 1))
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+    gp.fit(to_numpy(x_context[0]), to_numpy(y_context[0]))
+    mu_s, sigma_s = gp.predict(to_numpy(x_all[0]), return_std=True)
+    # temp_plot(to_numpy(x_context[0]), to_numpy(y_context[0]), to_numpy(x_all[0,:,0]), mu_s[:,0], sigma_s,
+    #           predict_mean[0,:,0].detach().cpu(), predict_var[0,:,0].detach().cpu())
+    mean_mse = criterion(predict_mean[0].detach().cpu(), torch.tensor(mu_s))
+    std_mse = criterion(predict_var[0,:,0].detach().cpu(), torch.tensor(sigma_s))
+    return mean_mse, std_mse
 
 def to_numpy(var):
     return var.detach().cpu().numpy()
@@ -57,7 +93,14 @@ def to_tensor(var):
     var = torch.tensor(var,dtype=torch.float32).unsqueeze(0)
     return var if len(var.shape) > 2 else var.unsqueeze(-1)
 
-def save_plot_data(data_test, kernel):
+def normalize(y, mean = None, std = None):
+    if mean is None:
+        mean = torch.mean(y,dim=[1,2])[:, None, None]
+        std = torch.std(y, dim=[1,2])[:, None, None]
+    y = (y - mean)/std
+    return y, mean, std
+
+def save_plot_data(data_test, kernel, sequential = False):
     if kernel in ['MNIST', 'SVHN', 'celebA']: # image datesets
         img, _ = next(iter(data_test))
         context_mask, target_mask = generate_mask(img)
@@ -68,20 +111,29 @@ def save_plot_data(data_test, kernel):
                                 num_context_points=x_context.shape[1], \
                                 num_total_points=x_target.shape[1] + x_context.shape[1])
     else: # GP datasets
-        data = data_test.generate_curves(include_context=False)
+        if sequential:
+            data = data_test.generate_temporal_curves(include_context=False)
+        else:
+            data = data_test.generate_curves(include_context=False)
         (x_context, y_context), x_target = data.query
         y_target = data.y_target
     context = to_numpy(torch.cat([x_context[0], y_context[0]], dim=-1))
     # print ("context data shape:", context.shape)
     df = pd.DataFrame(context)
-    df.to_csv('saved_fig/csv/plot_context_'+kernel+'.csv', index=False)
+    if sequential:
+        df.to_csv('saved_fig/csv/plot_sequential_context_' + kernel + '.csv', index=False)
+    else:
+        df.to_csv('saved_fig/csv/plot_context_'+kernel+'.csv', index=False)
     target = to_numpy(torch.cat([x_target[0],y_target[0]], dim=-1))
     # print("target data shape:", target.shape)
     df = pd.DataFrame(target)
-    df.to_csv('saved_fig/csv/plot_target_' + kernel + '.csv', index=False)
+    if sequential:
+        df.to_csv('saved_fig/csv/plot_sequential_target_' + kernel + '.csv', index=False)
+    else:
+        df.to_csv('saved_fig/csv/plot_target_' + kernel + '.csv', index=False)
     return data
 
-def load_plot_data(kernel):
+def load_plot_data(kernel, sequential = False):
     if kernel in ['MNIST', 'SVHN', 'celebA']:  # image datesets
         context = pd.read_csv('saved_fig/csv/plot_context_' + kernel + '.csv').values
         target = pd.read_csv('saved_fig/csv/plot_target_' + kernel + '.csv').values
@@ -92,8 +144,12 @@ def load_plot_data(kernel):
         query = (to_tensor(x_context), to_tensor(y_context)), to_tensor(x_target)
         y_target = to_tensor(y_target)
     else: # GP datasets
-        context = pd.read_csv('saved_fig/csv/plot_context_'+kernel+'.csv')
-        target = pd.read_csv('saved_fig/csv/plot_target_' + kernel + '.csv')
+        if sequential:
+            context = pd.read_csv('saved_fig/csv/plot_sequential_context_' + kernel + '.csv')
+            target = pd.read_csv('saved_fig/csv/plot_sequential_target_' + kernel + '.csv')
+        else:
+            context = pd.read_csv('saved_fig/csv/plot_context_'+kernel+'.csv')
+            target = pd.read_csv('saved_fig/csv/plot_target_' + kernel + '.csv')
         query = (to_tensor(context['x_context']), to_tensor(context['y_context'])), to_tensor(target['x_target'])
         y_target = to_tensor(target['y_target'])
     return NPRegressionDescription(query=query, y_target=y_target, \
@@ -214,3 +270,185 @@ def np_input_to_img(x, y, img_size):
     for i in range(batch_size):
         img[i, :, x[i, :, 0], x[i, :, 1]] = y[i, :, :]
     return img
+
+def channels_to_2nd_dim(X):
+    """
+    Takes a signal with channels on the last dimension (for most operations) and
+    returns it with channels on the second dimension (for convolutions).
+    """
+    return X.permute(*([0, X.dim() - 1] + list(range(1, X.dim() - 1))))
+
+def channels_to_last_dim(X):
+    """
+    Takes a signal with channels on the second dimension (for convolutions) and
+    returns it with channels on the last dimension (for most operations).
+    """
+    return X.permute(*([0] + list(range(2, X.dim())) + [1]))
+
+def make_abs_conv(Conv):
+    """Make a convolution have only positive parameters."""
+
+    class AbsConv(Conv):
+        def forward(self, input):
+            return F.conv2d(input,self.weight.abs(),self.bias,self.stride,self.padding,
+                self.dilation,self.groups,)
+    return AbsConv
+
+def make_depth_sep_conv(Conv):
+    """Make a convolution module depth separable."""
+
+    class DepthSepConv(nn.Module):
+        """Make a convolution depth separable.
+        Parameters
+        ----------
+        in_channels : int
+            Number of input channels.
+        out_channels : int
+            Number of output channels.
+        kernel_size : int
+        **kwargs :
+            Additional arguments to `Conv`
+        """
+
+        def __init__(
+            self,
+            in_channels,
+            out_channels,
+            kernel_size,
+            confidence=False,
+            bias=True,
+            **kwargs
+        ):
+            super().__init__()
+            self.depthwise = Conv(
+                in_channels,
+                in_channels,
+                kernel_size,
+                groups=in_channels,
+                bias=bias,
+                **kwargs
+            )
+            self.pointwise = Conv(in_channels, out_channels, 1, bias=bias)
+            self.reset_parameters()
+
+        def forward(self, x):
+            out = self.depthwise(x)
+            out = self.pointwise(out)
+            return out
+
+        def reset_parameters(self):
+            weights_init(self)
+
+    return DepthSepConv
+
+
+
+
+def get_activation_name(activation):
+    """Given a string or a `torch.nn.modules.activation` return the name of the activation."""
+    if isinstance(activation, str):
+        return activation
+
+    mapper = {
+        nn.LeakyReLU: "leaky_relu",
+        nn.ReLU: "relu",
+        nn.Tanh: "tanh",
+        nn.Sigmoid: "sigmoid",
+        nn.Softmax: "sigmoid",
+    }
+    for k, v in mapper.items():
+        if isinstance(activation, k):
+            return k
+
+    raise ValueError("Unkown given activation type : {}".format(activation))
+
+
+def get_gain(activation):
+    """Given an object of `torch.nn.modules.activation` or an activation name
+    return the correct gain."""
+    if activation is None:
+        return 1
+
+    activation_name = get_activation_name(activation)
+
+    param = None if activation_name != "leaky_relu" else activation.negative_slope
+    gain = nn.init.calculate_gain(activation_name, param)
+
+    return gain
+
+
+def linear_init(module, activation="relu"):
+    """Initialize a linear layer.
+    Parameters
+    ----------
+    module : nn.Module
+       module to initialize.
+    activation : `torch.nn.modules.activation` or str, optional
+        Activation that will be used on the `module`.
+    """
+    x = module.weight
+
+    if module.bias is not None:
+        module.bias.data.zero_()
+
+    if activation is None:
+        return nn.init.xavier_uniform_(x)
+
+    activation_name = get_activation_name(activation)
+
+    if activation_name == "leaky_relu":
+        a = 0 if isinstance(activation, str) else activation.negative_slope
+        return nn.init.kaiming_uniform_(x, a=a, nonlinearity="leaky_relu")
+    elif activation_name == "relu":
+        return nn.init.kaiming_uniform_(x, nonlinearity="relu")
+    elif activation_name in ["sigmoid", "tanh"]:
+        return nn.init.xavier_uniform_(x, gain=get_gain(activation))
+
+def weights_init(module, **kwargs):
+    """Initialize a module and all its descendents.
+    Parameters
+    ----------
+    module : nn.Module
+       module to initialize.
+    """
+    module.is_resetted = True
+    for m in module.modules():
+        try:
+            if hasattr(module, "reset_parameters") and module.is_resetted:
+                # don't reset if resetted already (might want special)
+                continue
+        except AttributeError:
+            pass
+
+        if isinstance(m, torch.nn.modules.conv._ConvNd):
+            # used in https://github.com/brain-research/realistic-ssl-evaluation/
+            nn.init.kaiming_normal_(m.weight, mode="fan_out", **kwargs)
+        elif isinstance(m, nn.Linear):
+            linear_init(m, **kwargs)
+        elif isinstance(m, nn.BatchNorm2d):
+            m.weight.data.fill_(1)
+            m.bias.data.zero_()
+
+def init_param_(param, activation=None, is_positive=False, bound=0.05, shift=0):
+    """Initialize inplace some parameters of the model that are not part of a
+    children module.
+    Parameters
+    ----------
+    param : nn.Parameter:
+        Parameters to initialize.
+    activation : torch.nn.modules.activation or str, optional)
+        Activation that will be used on the `param`.
+    is_positive : bool, optional
+        Whether to initilize only with positive values.
+    bound : float, optional
+        Maximum absolute value of the initealized values. By default `0.05` which
+        is keras default uniform bound.
+    shift : int, optional
+        Shift the initialisation by a certain value (same as adding a value after init).
+    """
+    gain = get_gain(activation)
+    if is_positive:
+        nn.init.uniform_(param, 1e-5 + shift, bound * gain + shift)
+        return
+
+    nn.init.uniform_(param, -bound * gain + shift, bound * gain + shift)
