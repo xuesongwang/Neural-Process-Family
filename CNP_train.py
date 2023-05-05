@@ -56,7 +56,7 @@ def save_plot(epoch, data, model):
 
 def main_GP():
     kernel = 'period' # EQ or period or matern
-    TRAINING_ITERATIONS = int(2e5)
+    TRAINING_ITERATIONS = int(1e5)
     MAX_CONTEXT_POINT = 50
     VAL_AFTER = 1e3
     BEST_LOSS = -np.inf
@@ -143,7 +143,7 @@ def main_realword():
 
 if __name__ == '__main__':
     # define hyper parameters
-    device = torch.device('cuda:7' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     main_GP()
     # main_realword()
 
