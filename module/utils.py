@@ -46,7 +46,8 @@ def init_layer_weights(layer):
 def compute_loss(mean, var, y_target):
     dist = Normal(loc=mean, scale=var)
     log_prob = dist.log_prob(y_target)
-    loss = - torch.mean(log_prob)
+    loss = log_prob.view(*log_prob.shape[:2], -1).mean(-1)
+    loss = - torch.mean(loss)
     return loss
 
 def compute_MSE(mean, y_target):
@@ -452,3 +453,59 @@ def init_param_(param, activation=None, is_positive=False, bound=0.05, shift=0):
         return
 
     nn.init.uniform_(param, -bound * gain + shift, bound * gain + shift)
+
+def compute_dists(x, y):
+    """Fast computation of pair-wise distances for the 1d case.
+
+    Args:
+        x (tensor): Inputs of shape (batch, n, 1).
+        y (tensor): Inputs of shape (batch, m, 1).
+
+    Returns:
+        tensor: Pair-wise distances of shape (batch, n, m).
+    """
+    return (x - y.permute(0, 2, 1)) ** 2
+
+def to_multiple(x, multiple):
+    """Convert `x` to the nearest above multiple.
+
+    Args:
+        x (number): Number to round up.
+        multiple (int): Multiple to round up to.
+
+    Returns:
+        number: `x` rounded to the nearest above multiple of `multiple`.
+    """
+    if x % multiple == 0:
+        return x
+    else:
+        return x + multiple - x % multiple
+
+def pad_concat(t1, t2):
+    """Concat the activations of two layer channel-wise by padding the layer
+    with fewer points with zeros.
+
+    Args:
+        t1 (tensor): Activations from first layers of shape `(batch, n1, c1)`.
+        t2 (tensor): Activations from second layers of shape `(batch, n2, c2)`.
+
+    Returns:
+        tensor: Concatenated activations of both layers of shape
+            `(batch, max(n1, n2), c1 + c2)`.
+    """
+    if t1.shape[2] > t2.shape[2]:
+        padding = t1.shape[2] - t2.shape[2]
+        if padding % 2 == 0:  # Even difference
+            t2 = F.pad(t2, (int(padding / 2), int(padding / 2)), 'reflect')
+        else:  # Odd difference
+            t2 = F.pad(t2, (int((padding - 1) / 2), int((padding + 1) / 2)),
+                       'reflect')
+    elif t2.shape[2] > t1.shape[2]:
+        padding = t2.shape[2] - t1.shape[2]
+        if padding % 2 == 0:  # Even difference
+            t1 = F.pad(t1, (int(padding / 2), int(padding / 2)), 'reflect')
+        else:  # Odd difference
+            t1 = F.pad(t1, (int((padding - 1) / 2), int((padding + 1) / 2)),
+                       'reflect')
+
+    return torch.cat([t1, t2], dim=1)

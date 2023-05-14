@@ -2,7 +2,6 @@ import numpy as np
 import collections
 import torch
 
-
 # The NP takes as input a `NPRegressionDescription` namedtuple with fields:
 #   `query`: a tuple containing ((context_x, context_y), target_x)
 #   `target_y`: a tesor containing the ground truth for the targets to be
@@ -198,7 +197,9 @@ class GPCurvesReader(object):
 
         if self.kernel != 'matern':
             # Calculate Cholesky, using double precision for better stability:
-            cholesky = torch.cholesky(kernel.type(torch.float64)).type(torch.float32) # [B, y_size, num_total_points, num_total_points]
+            # cholesky = torch.linalg.cholesky(kernel.type(torch.float64)).type(torch.float32) # [B, y_size, num_total_points, num_total_points]
+            cholesky = np.linalg.cholesky(kernel.cpu().numpy())
+            cholesky = torch.tensor(cholesky).type(torch.FloatTensor).to(kernel.device)
             # Sample a curve
             # [batch_size, y_size, num_total_points, 1]
             y_values = torch.matmul(cholesky, torch.rand([self._batch_size, self._y_size, num_total_points, 1]).to(self.device))
@@ -276,8 +277,10 @@ class GPCurvesReader(object):
             kernel = self._periodic_kernel(x_values)
 
         # Calculate Cholesky, using double precision for better stability:
-        cholesky = torch.cholesky(kernel.type(torch.float64)).type(
-            torch.float32)  # [B, y_size, num_total_points, num_total_points]
+        # cholesky = torch.linalg.cholesky(kernel.type(torch.float64)).type(
+        #     torch.float32)  # [B, y_size, num_total_points, num_total_points]
+        cholesky = np.linalg.cholesky(kernel.cpu().numpy())
+        cholesky = torch.tensor(cholesky).type(torch.FloatTensor).to(kernel.device)
 
         # Sample a curve
         # [batch_size, y_size, num_total_points, 1]

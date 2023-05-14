@@ -41,7 +41,7 @@ class NeuralProcess(nn.Module):
                                        output_dim=self.output_dim,
                                        include_latent=True)
 
-    def forward(self, x_context, y_context, x_target, y_target = None):
+    def forward(self, x_context, y_context, x_target, y_target = None, num_samples=20):
         """Forward pass through NP.
 
         Args:
@@ -51,6 +51,9 @@ class NeuralProcess(nn.Module):
                 `(batch, num_context, input_dim_y)`.
             x_target (tensor): Target locations of shape
                 `(batch, num_target, input_dim_x)`.
+            y_target (tensor): Target values of shape
+                `(batch, num_target, input_dim_y)`.
+            num_samples (int): number of z values to sample from the posterior distribution
 
         Returns:
             (Mean, var), dist : Result of decoder, and the distribution of the latent encoder
@@ -60,18 +63,19 @@ class NeuralProcess(nn.Module):
         r = self.deter_encoder(x_context, y_context, x_target)
         z_dist = self.latent_encoder(x_context, y_context)
         if y_target is None:
-            z = z_dist.rsample()
+            z = z_dist.rsample([num_samples])
             z_dist_post = None
         else:
             z_dist_post = self.latent_encoder(x_target, y_target)
-            z = z_dist_post.rsample()
+            z = z_dist_post.rsample([num_samples])
 
         # prepare embedding concatenated with x_target
         num_target = x_target.shape[1]
         if r.shape[1] == 1:
             r = r.repeat(1, num_target, 1)
-        if z.shape[1] == 1:
-            z = z.repeat(1, num_target, 1)
+        r = r.unsqueeze(0).repeat(num_samples, 1, 1, 1) # n_samples
+        if z.shape[2] == 1:
+            z = z.repeat(1, 1, num_target, 1)
         representation = torch.cat([r, z], dim=-1)
         return self.decoder(x_target, representation, n), z_dist, z_dist_post
 
