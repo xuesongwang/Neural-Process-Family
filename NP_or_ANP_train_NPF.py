@@ -148,8 +148,6 @@ def train_model_loader(model, dataloader, optim, mode_name, writer, val_loader =
 
 
 
-
-
 def main_GP(kernel_idx1=0, kernel_idx2=1, MODELNAME = 'NP'):
     # set up tensorboard
     time_stamp = time.strftime("%m-%d-%Y_%H:%M:%S", time.localtime())
