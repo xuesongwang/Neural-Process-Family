@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from module.basic_module import ConvDeepSet, FinalLayer
+from module.basic_module import ConvDeepSet, FinalLayer, UNet
 from module.utils import init_sequential_weights, init_layer_weights, to_multiple
 
 

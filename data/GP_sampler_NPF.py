@@ -70,7 +70,7 @@ def gp_transport_task(kernel1='RBF', kernel2 = 'Periodic_Kernel'):
 
     dataset_val_k1 = get_gp_dataset(name=kernel1, mode='val', n_samples=int(1000*scale))
     dataset_val_k2 = get_gp_dataset(name=kernel2, n_samples=int(1000*scale))
-    return tau_dataset, dataset_tr_k1, mixed_tr, dataset_val_k1, dataset_val_k2
+    return tau_dataset, dataset_tr_k1, dataset_tr_k2, mixed_tr, dataset_val_k1, dataset_val_k2
 
 if __name__ == '__main__':
     get_gp_dataset(name='RBF', )

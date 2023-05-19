@@ -200,7 +200,7 @@ class MeanPooling(nn.Module):
         super(MeanPooling, self).__init__()
         self.pooling_dim = pooling_dim
 
-    def forward(self, h, x_context, x_target):
+    def forward(self, h, x_context=None, x_target=None):
         """Perform pooling operation.
 
         Args:
@@ -233,10 +233,10 @@ class LatentEncoder(nn.Module):
             pre_pooling_fn = nn.Sequential(
                 nn.Linear(self.input_dim, self.latent_dim),
                 nn.ReLU(),
-                nn.Linear(self.latent_dim, self.latent_dim),
-                nn.ReLU(),
-                nn.Linear(self.latent_dim, self.latent_dim),
-                nn.ReLU(),
+                # nn.Linear(self.latent_dim, self.latent_dim),
+                # nn.ReLU(),
+                # nn.Linear(self.latent_dim, self.latent_dim),
+                # nn.ReLU(),
                 nn.Linear(self.latent_dim, 2 * self.latent_dim)
             )
             self.pre_pooling_fn = init_sequential_weights(pre_pooling_fn)
@@ -246,31 +246,24 @@ class LatentEncoder(nn.Module):
         self.pooling_fn = MeanPooling(pooling_dim=1)
         self.sigma_fn = torch.sigmoid
 
-    def forward(self, x_context, y_context, x_target=None):
+    def forward(self, z_deter):
         """Forward pass through the decoder.
 
         Args:
-            x_context (tensor): Context locations of shape
-                `(batch, num_context, input_dim_x)`.
-            y_context (tensor): Context values of shape
-                `(batch, num_context, input_dim_y)`.
-            x_target (tensor, optional): Target locations of shape
-                `(batch, num_target, input_dim_x)`.
+            z_deter (tensor): the representation of context/target set passed by the determinstic part
+                `(batch, num_context, latent_dim)`.
 
         Returns:
             tensor: Latent representation of each context set of shape
                 `(batch, 1, latent_dim)`.
         """
-        assert len(x_context.shape) == 3, \
-            'Incorrect shapes: ensure x_context is a rank-3 tensor.'
-        assert len(y_context.shape) == 3, \
-            'Incorrect shapes: ensure y_context is a rank-3 tensor.'
+        assert len(z_deter.shape) == 3, \
+            'Incorrect shapes: ensure the context is a rank-3 tensor.'
 
-        decoder_input = torch.cat((x_context, y_context), dim=-1)
-        h = self.pre_pooling_fn(decoder_input)
+        h = self.pre_pooling_fn(z_deter)
         if self.use_lstm == True:
             h = h[0]
-        h = self.pooling_fn(h, x_context, x_target)
+        h = self.pooling_fn(h)
         mean = h[..., :self.latent_dim]
         sigma = 0.1 + 0.9* self.sigma_fn(h[..., self.latent_dim:])
         dist = Normal(loc=mean, scale=sigma)

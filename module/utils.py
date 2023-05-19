@@ -8,6 +8,7 @@ from data.GP_data_sampler import NPRegressionDescription
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 import matplotlib.pyplot as plt
+import math
 
 def init_sequential_weights(model, bias=0.0):
     """Initialize the weights of a nn.Sequential module with Glorot
@@ -64,6 +65,27 @@ def comput_kl_loss(prior, poster):
         div = kl_divergence(poster, prior)
         div = torch.mean(div, dim=0).sum()
     return div
+
+def compute_importance_sampling(mean, var, prior, poster, y_target=None):
+    def compte_batch_logprob(mean, var, target):
+        dist = Normal(loc=mean, scale=var)
+        log_prob = dist.log_prob(target)
+        loss = log_prob.view(*log_prob.shape[:2], -1).mean(-1)
+        return loss
+    n_samples = mean.shape[0]
+    z_samples = poster.rsample([n_samples]) #adopt importance sampling as y_target is already accessible when calling the function
+    sum_log_context = compte_batch_logprob(prior.loc, prior.scale, z_samples)
+    sum_log_target = compte_batch_logprob(poster.loc, poster.scale, z_samples)
+
+    target_likelihood = compte_batch_logprob(mean, var, y_target)
+    # log_sum_exp_z ... . size = [batch_size]
+    sum_log_all = target_likelihood + sum_log_context - sum_log_target
+    log_S_z_sum_p_yCz = torch.logsumexp(sum_log_all, 0)
+
+    # - log(n_z_samples)
+    log_E_z_sum = -torch.mean(log_S_z_sum_p_yCz - math.log(n_samples))
+
+    return log_E_z_sum, -torch.mean(target_likelihood)
 
 def temp_plot(x_context, y_context, x_all, mu_s, sigma_s, pred_mu, pred_sigma):
     plt.scatter(x_context, y_context, c='red')
