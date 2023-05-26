@@ -1,7 +1,8 @@
 from data.GP_sampler_NPF import gp_transport_task,collate_fns
 from data.NIFTY_data_sampler import NIFTYReader
-from module.convNP import ConvNP, UNet
-from module.utils import compute_loss, to_numpy, load_plot_data, normalize, comput_kl_loss
+from module.convNP import ConvNP, UNet, SimpleConv
+# from module.NP import NeuralProcess as NP
+from module.utils import compute_loss, to_numpy, load_plot_data, normalize, comput_kl_loss, compute_importance_sampling
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
@@ -113,14 +114,14 @@ def val_model_loader(model, dataloader):
     total_loss = 0
     for i, data in enumerate(dataloader):
         x_context, y_context, x_target, y_target, kernel_idx = data
-        (mean, var), prior, poster = model(x_context.to(device), y_context.to(device), x_target.to(device))
+        (mean, var), prior, poster = model(x_context.to(device), y_context.to(device), x_target.to(device), num_samples=5)
         nll_loss = compute_loss(mean, var, y_target.to(device))
         loss = nll_loss
         total_loss += loss.item() * x_context.shape[0]
     data_size = len(dataloader.dataset)
     return total_loss/data_size
 
-def train_model_loader(model, dataloader, optim, mode_name, writer, val_loader = None, start_epoch=0, training_epoch =1):
+def train_model_loader(model, dataloader, optim, mode_name, writer, val_loader = None, start_epoch=0, training_epoch =1,loss_strategy='IS'):
     model.train()
     val_every_epoch = 10 if torch.cuda.is_available() else 1
     max_epoch = 0
@@ -129,12 +130,17 @@ def train_model_loader(model, dataloader, optim, mode_name, writer, val_loader =
         for i, data in enumerate(dataloader):
             x_context, y_context, x_target, y_target, kernel_idx = data
             (mean, var), prior, poster = model(x_context.to(device), y_context.to(device), x_target.to(device),
-                                            y_target.to(device), num_samples=1)
-            nll_loss = compute_loss(mean, var, y_target.to(device))
-            kl_loss = comput_kl_loss(prior, poster)
-            loss = nll_loss + kl_loss
+                                            y_target.to(device), num_samples=5)
+            loss, y_likelihood = compute_importance_sampling(mean, var, prior, poster, y_target.to(device))
+            if loss_strategy == 'IS':
+                loss, y_likelihood = compute_importance_sampling(mean, var, prior, poster, y_target.to(device))
+            elif loss_strategy == 'VI' :
+                y_likelihood = compute_loss(mean, var, y_target.to(device))
+                kl_loss = comput_kl_loss(prior, poster)
+                loss = y_likelihood + kl_loss
             optim.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optim.step()
             if val_loader is None:
                 if i == 0 or (i + 1) % val_every_epoch == 0:
@@ -155,14 +161,14 @@ def train_model_loader(model, dataloader, optim, mode_name, writer, val_loader =
         max_epoch += i/val_every_epoch
     return max_epoch
 
-def main_GP(kernel_idx1=0, kernel_idx2=1, MODELNAME = 'ConvNP'):
+def main_GP(kernel_idx1=0, kernel_idx2=1, MODELNAME = 'ConvNP', loss_strategy='IS'):
     # set up tensorboard
     time_stamp = time.strftime("%m-%d-%Y_%H:%M:%S", time.localtime())
     batch_size = 64 if torch.cuda.is_available() else 2
     # load data set
     kernel_dict = {0: 'RBF', 1: 'Periodic_Kernel', 2: 'Matern'}
     kernel_1, kernel_2 = kernel_dict[kernel_idx1], kernel_dict[kernel_idx2]
-    tau_dataset, dataset_tr_k1, mixed_tr, dataset_val_k1, dataset_val_k2 = gp_transport_task(kernel1=kernel_1,
+    tau_dataset, dataset_tr_k1, dataset_tr_k2, mixed_tr, dataset_val_k1, dataset_val_k2 = gp_transport_task(kernel1=kernel_1,
                                                                                              kernel2=kernel_2)
     writer = SummaryWriter('runs/' + MODELNAME + '_' + time_stamp + 'k1_' + kernel_1 + 'k2_' + kernel_2)
     tau_loader = torch.utils.data.DataLoader(tau_dataset, batch_size=batch_size, shuffle=True,
@@ -176,28 +182,30 @@ def main_GP(kernel_idx1=0, kernel_idx2=1, MODELNAME = 'ConvNP'):
     val_k2_loader = torch.utils.data.DataLoader(dataset_val_k2, batch_size=batch_size, shuffle=True,
                                                 collate_fn=collate_fns(50, 50))
 
-    convnp = ConvNP(rho=UNet(), points_per_unit=64, device = device).to(device)
+    convnp = ConvNP(rho=SimpleConv(in_channels=32, out_channels=64), points_per_unit=64, device=device).to(device)
+    # convnp = ConvNP(rho=UNet(in_channels=32), points_per_unit=64, device = device).to(device)
+    # convnp = NP(input_dim=1, latent_dim=128, output_dim=1, use_attention=MODELNAME == 'ANP').to(device)
     optim = torch.optim.Adam(convnp.parameters(), lr=3e-4, weight_decay=1e-5)
 
     # Warm up the model with tau dataset and save the model
-    training_epoch = 200 if torch.cuda.is_available() else 1
-    star_epoch = train_model_loader(convnp, tau_loader, optim, kernel_1, writer, training_epoch=training_epoch)
+    training_epoch = 50 if torch.cuda.is_available() else 1
+    star_epoch = train_model_loader(convnp, tau_loader, optim, kernel_1, writer, training_epoch=training_epoch, loss_strategy=loss_strategy)
     # save model output
     # torch.save(np.state_dict(), 'saved_model/' + '%s_tau'%kernel_1 + '_' + MODELNAME + '.pt')
     print("finished training/loading on tau dataset!")
     # test the performance of the prior
     # np.load_state_dict(torch.load('saved_model/' + '%s_tau' % kernel_1 + '_' + MODELNAME + '.pt', map_location=device))
-    # save_plot(tau_dataset, kernel_1, np, name='tau_%s' % kernel_1, MODELNAME=MODELNAME)
+    save_plot(tau_dataset, kernel_1, convnp, name='tau_%s' % kernel_1, MODELNAME=MODELNAME)
 
     # Step 1: load the model from the kernel-1 and continue training using kernel-1
     # star_epoch = 15620
     # np.load_state_dict(torch.load('saved_model/' + '%s_tau' % kernel_1 + '_' + MODELNAME + '.pt', map_location=device))
-    # new_epoch = 50
-    # train_model_loader(np, train_k1_loader, optim, kernel_1, writer, val_loader=val_k1_loader,
-    #                    start_epoch=star_epoch, training_epoch=new_epoch)
+    new_epoch = 20
+    train_model_loader(convnp, train_k1_loader, optim, kernel_1, writer, val_loader=val_k1_loader,
+                       start_epoch=star_epoch, training_epoch=new_epoch)
     # torch.save(np.state_dict(), 'saved_model/' + '%s_only'%kernel_1 + '_' + MODELNAME + '.pt')
     # np.load_state_dict(torch.load('saved_model/' + '%s_only' % kernel_1 + '_' + MODELNAME + '.pt', map_location=device))
-    # save_plot(dataset_val_k1, kernel_1, np, name='only_%s' % kernel_1, MODELNAME=MODELNAME)
+    save_plot(dataset_val_k1, kernel_1, convnp, name='only_%s' % kernel_1, MODELNAME=MODELNAME)
 
     # step 2: load the model from the original kernel-1 again and training on a mixture of kernel 1 and 2
     # np.load_state_dict(torch.load('saved_model/' + '%s_tau' % kernel_1 + '_' + MODELNAME + '.pt', map_location=device))
@@ -266,9 +274,11 @@ if __name__ == '__main__':
     parser.add_argument('--modelname', type=str, default='ConvNP', help='ConvNP')
     parser.add_argument('--kernel1', type=int, default=0, help='tau kernel')
     parser.add_argument('--kernel2', type=int, default=1, help='new kernel')
+    parser.add_argument('--loss', type=str, default='IS', help='IS(importance sampling) or VI')
     opt = parser.parse_args()
     # define hyper parameters
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    main_GP(kernel_idx1=opt.kernel1, kernel_idx2=opt.kernel2, MODELNAME=opt.modelname)
+    print(device)
+    main_GP(kernel_idx1=opt.kernel1, kernel_idx2=opt.kernel2, MODELNAME=opt.modelname, loss_strategy=opt.loss)
     # main_realword()
 

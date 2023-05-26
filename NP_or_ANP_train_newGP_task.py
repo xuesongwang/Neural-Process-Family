@@ -311,7 +311,7 @@ if __name__ == '__main__':
     parser.add_argument('--kernel2', type=int, default=1, help='new kernel')
     parser.add_argument('--train_tau_epoch', type=int, default=200, help='training epochs for the tau dataset')
     parser.add_argument('--train_k2_epoch', type=int, default=50, help='training epochs for the new kernel')
-    parser.add_argument('--loss', type=str, default='VI', help='IS(importance sampling) or VI')
+    parser.add_argument('--loss', type=str, default='IS', help='IS(importance sampling) or VI')
     opt = parser.parse_args()
     # define hyper parameters
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')

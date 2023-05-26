@@ -222,7 +222,8 @@ class LatentEncoder(nn.Module):
     def __init__(self,
                  input_dim,
                  latent_dim,
-                 use_lstm = False):
+                 use_lstm = False,
+                 use_pooling = True):
         super(LatentEncoder, self).__init__()
 
         self.latent_dim = latent_dim
@@ -245,6 +246,7 @@ class LatentEncoder(nn.Module):
             self.pre_pooling_fn = nn.LSTM(self.input_dim, 2*self.latent_dim, batch_first=True)
         self.pooling_fn = MeanPooling(pooling_dim=1)
         self.sigma_fn = torch.sigmoid
+        self.use_pooling = use_pooling
 
     def forward(self, z_deter):
         """Forward pass through the decoder.
@@ -263,7 +265,7 @@ class LatentEncoder(nn.Module):
         h = self.pre_pooling_fn(z_deter)
         if self.use_lstm == True:
             h = h[0]
-        h = self.pooling_fn(h)
+        h = self.pooling_fn(h) if self.use_pooling else h
         mean = h[..., :self.latent_dim]
         sigma = 0.1 + 0.9* self.sigma_fn(h[..., self.latent_dim:])
         dist = Normal(loc=mean, scale=sigma)
@@ -720,6 +722,7 @@ class FinalLayer(nn.Module):
         batch_size = x.shape[0]
         n_in = x.shape[1]
         n_out = t.shape[1]
+        n_samples = y.shape[0]
 
         # Compute the pairwise distances.
         # Shape: (batch, n_in, n_out).
@@ -728,19 +731,21 @@ class FinalLayer(nn.Module):
         # Compute the weights.
         # Shape: (batch, n_in, n_out, in_channels).
         wt = self.rbf(dists)
+        # TODO: match the shape of wt with y
+        wt = wt.unsqueeze(0).repeat(n_samples, 1, 1, 1, 1) #num_samples
 
         # Perform the weighting.
-        # Shape: (batch, n_in, n_out, in_channels).
-        y_out = y.view(batch_size, n_in, -1, self.in_channels) * wt
+        # Shape: (n_samples, batch, n_in, n_out, in_channels).
+        y_out = y.view(n_samples, batch_size, n_in, -1, self.in_channels) * wt
 
         # Sum over the inputs.
-        # Shape: (batch, n_out, in_channels).
-        y_out = y_out.sum(1)
+        # Shape: (n_samples, batch, n_out, in_channels).
+        y_out = y_out.sum(2)
 
         # Apply the point-wise function.
-        # Shape: (batch, n_out, out_channels).
-        y_out = y_out.view(batch_size * n_out, self.in_channels)
+        # Shape: (n_samples, batch, n_out, out_channels).
+        y_out = y_out.view(n_samples*batch_size * n_out, self.in_channels)
         y_out = self.g(y_out)
-        y_out = y_out.view(batch_size, n_out, self.out_channels)
+        y_out = y_out.view(n_samples, batch_size, n_out, self.out_channels)
 
         return y_out
